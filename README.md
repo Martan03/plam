@@ -1,0 +1,102 @@
+# plam
+
+Pure lambda calculus interpreter.
+
+Simplifies each expression in the file to form where it is either a lambda
+function or unbound variable.
+
+## Syntax
+
+### Basic lambda calcul
+
+Create lambda function that takes argument `x` and has body `body`:
+```
+\x.body
+```
+
+Call function `f` with value of variable `x`:
+```
+f x
+```
+
+Change precedence with `(` and `)`:
+```
+foo (bar x)
+```
+
+### Extensions
+
+Multiple lambda functions in succession can be simplified:
+```
+\x.\y.body
+```
+is equivalent to
+```
+\x y.body
+```
+
+Bind `body` to the name `name`:
+```
+let name = body
+```
+
+Separate two statements `a` and `b`:
+```
+a ; b
+```
+
+### Builtin functions
+
+These functions are very opaque and serve only to get more human readable
+information from a lambda expression.
+
+- `$counter` represents a opque counter with value of `0`. When printed, it is
+  shows its value. Can be manipulated only by `$increment`. For any other use
+  cases behaves as unbound variable.
+- `$increment` represents opaque function. If given any counter as argument it
+  will expand to incremented counter. For any other use cases behaves as
+  unbound variable.
+
+In future plan to add builtin `$stdin` to allow reading from input and builtins
+`$char` and `$concat` to allow creating any string as output. These all will be
+very opaque so that they cannot really by used for any computation and are used
+only for input and output.
+
+## Example
+
+Code:
+```
+let true = \a b.a
+let false = \a b.b
+let if = \c t f.c t f
+let or = \a b.a true b
+let and = \a b.a b false
+let not = \a.a false true
+let xor = \a b.a (not b) b
+
+let 0 = \f x.x
+let succ = \a f x. a f (f x)
+
+;
+
+if true T F;
+if false T F;
+
+if (or true false) T F;
+if (and true false) T F;
+if (xor true true) T F;
+
+(succ (succ 0));
+(succ (succ 0)) (\x.$increment x) $counter
+```
+
+Output:
+```
+T
+F
+T
+F
+F
+(\f.(\x.(((succ 0) f) (f x))))
+:2:
+```

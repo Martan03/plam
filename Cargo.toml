@@ -1,0 +1,9 @@
+[package]
+name = "plam"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+termal = "4.2.1"
+thiserror = "2.0.18"
+utf8-chars = "3.0.7"
