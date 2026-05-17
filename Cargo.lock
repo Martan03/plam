@@ -42,10 +42,49 @@ dependencies = [
 ]
 
 [[package]]
+name = "minimal-lexical"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+
+[[package]]
 name = "minlin"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6015182c46495fbe1e875e03e0bc6660ee6614047026cf79c0067bbfaa7ace51"
+
+[[package]]
+name = "pareg"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "450b031fa6090fde38b311a82074e1a3053fdf8c8444fe3d6915f63cf95a51d9"
+dependencies = [
+ "pareg_core",
+ "pareg_proc",
+]
+
+[[package]]
+name = "pareg_core"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cda020a8d3dc108c7350aeab46d67453472c7c8893f458be64d8fbe6c829b89e"
+dependencies = [
+ "minimal-lexical",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "termal",
+ "thiserror",
+]
+
+[[package]]
+name = "pareg_proc"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e0e0f1cc461a19f435437932df9f6acff6f8022c6b481d3bfdc8679eb6ae5c7"
+dependencies = [
+ "pareg_core",
+]
 
 [[package]]
 name = "place_macro"
@@ -81,6 +120,7 @@ dependencies = [
 name = "plam"
 version = "0.1.0"
 dependencies = [
+ "pareg",
  "termal",
  "thiserror",
  "utf8-chars",

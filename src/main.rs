@@ -1,16 +1,17 @@
 use std::{
-    collections::HashMap, env, fs::File, io::BufReader, process::ExitCode,
-    rc::Rc,
+    collections::HashMap, fs::File, io::BufReader, process::ExitCode, rc::Rc,
 };
 
+use pareg::Pareg;
 use termal::eprintacln;
 use utf8_chars::BufReadCharsExt;
 
 use crate::{
-    err::Result, expr::Expr, i_tab::ITab, interpreter::Interpreter,
+    cli::Args, err::Result, expr::Expr, i_tab::ITab, interpreter::Interpreter,
     parser::parse,
 };
 
+mod cli;
 mod err;
 mod expr;
 mod i_tab;
@@ -29,26 +30,33 @@ fn main() -> ExitCode {
 
 fn start() -> Result<()> {
     // Open the file.
-    let args: Vec<_> = env::args().collect();
-    let mut file = BufReader::new(File::open(&args[1])?);
-    let chars = file.chars().map(|e| e.map_err(|e| e.into()));
+    let args = Args::parse(Pareg::args())?;
+
+    if args.sources.is_empty() {
+        return Ok(());
+    }
 
     // Prepare data containers
     let mut itab = ITab::new();
     let mut defs = HashMap::new();
+    let mut exprs = vec![];
     // Define builtins
     defs.insert(itab.insert("$increment"), Rc::new(Expr::Increment));
     defs.insert(itab.insert("$counter"), Rc::new(Expr::Counter(0)));
     defs.insert(itab.insert("$char"), Rc::new(Expr::Char));
 
-    // Parse the code.
-    let exprs = parse(&mut itab, chars, &mut defs)?;
+    // Load the code
+    for p in args.sources {
+        let mut file = BufReader::new(File::open(p)?);
+        let chars = file.chars().map(|e| e.map_err(|e| e.into()));
+        exprs.append(&mut parse(&mut itab, chars, &mut defs)?);
+    }
 
     // Interpret the code.
     let int = Interpreter::new(defs);
     let mut buf = String::new();
     for expr in exprs {
-        let val = int.eval(expr);
+        let val = int.eval(expr, args.expand);
         buf.clear();
         val.to_string(&itab, &mut buf);
         println!("{buf}");

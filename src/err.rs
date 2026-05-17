@@ -1,5 +1,6 @@
 use std::{borrow::Cow, fmt::Display};
 
+use pareg::ArgError;
 use thiserror::Error;
 
 use crate::parser::ParseError;
@@ -12,6 +13,8 @@ pub enum ErrKind {
     Io(#[from] std::io::Error),
     #[error(transparent)]
     Parse(#[from] ParseError),
+    #[error(transparent)]
+    Pareg(#[from] ArgError),
 }
 
 #[derive(Debug)]

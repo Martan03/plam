@@ -11,7 +11,7 @@ impl Interpreter {
         Self { top }
     }
 
-    pub fn eval(&self, mut expr: Rc<Expr>) -> Rc<Expr> {
+    pub fn eval(&self, mut expr: Rc<Expr>, expand: bool) -> Rc<Expr> {
         loop {
             expr = match &*expr {
                 Expr::Ident(id) => {
@@ -22,10 +22,10 @@ impl Interpreter {
                     }
                 }
                 Expr::Apply(l, r) => {
-                    if let Some(e) = self.eval_apply(l.clone(), r.clone()) {
-                        e
-                    } else {
-                        return expr;
+                    match self.eval_apply(l.clone(), r.clone()) {
+                        Ok(r) => r,
+                        Err(e) if expand => return e,
+                        _ => return expr,
                     }
                 }
                 Expr::Lambda(_, _)
@@ -43,14 +43,18 @@ impl Interpreter {
         self.get(id)
     }
 
-    fn eval_apply(&self, l: Rc<Expr>, r: Rc<Expr>) -> Option<Rc<Expr>> {
-        let l = self.eval(l);
+    fn eval_apply(
+        &self,
+        l: Rc<Expr>,
+        r: Rc<Expr>,
+    ) -> Result<Rc<Expr>, Rc<Expr>> {
+        let l = self.eval(l, true);
         match &*l {
-            Expr::Lambda(_, _) => Some(self.eval_apply_lambda(l, r)),
+            Expr::Lambda(_, _) => Ok(self.eval_apply_lambda(l, r)),
             Expr::Increment => self.eval_apply_increment(r),
             Expr::Char => self.eval_apply_char(r),
             Expr::String(_) => self.eval_apply_string(l, r),
-            _ => None,
+            _ => Err(Rc::new(Expr::Apply(l, r))),
         }
     }
 
@@ -62,21 +66,21 @@ impl Interpreter {
         body.clone()
     }
 
-    fn eval_apply_increment(&self, r: Rc<Expr>) -> Option<Rc<Expr>> {
-        let r = self.eval(r);
+    fn eval_apply_increment(&self, r: Rc<Expr>) -> Result<Rc<Expr>, Rc<Expr>> {
+        let r = self.eval(r, true);
         if let Expr::Counter(cnt) = &*r {
-            Some(Rc::new(Expr::Counter(*cnt + 1)))
+            Ok(Rc::new(Expr::Counter(*cnt + 1)))
         } else {
-            None
+            Err(Rc::new(Expr::Apply(Rc::new(Expr::Increment), r)))
         }
     }
 
-    fn eval_apply_char(&self, r: Rc<Expr>) -> Option<Rc<Expr>> {
-        let r = self.eval(r);
+    fn eval_apply_char(&self, r: Rc<Expr>) -> Result<Rc<Expr>, Rc<Expr>> {
+        let r = self.eval(r, true);
         if let Expr::Counter(cnt) = &*r {
-            Some(Rc::new(Expr::String(vec![*cnt as u8])))
+            Ok(Rc::new(Expr::String(vec![*cnt as u8])))
         } else {
-            None
+            Err(Rc::new(Expr::Apply(Rc::new(Expr::Char), r)))
         }
     }
 
@@ -84,16 +88,16 @@ impl Interpreter {
         &self,
         mut l: Rc<Expr>,
         r: Rc<Expr>,
-    ) -> Option<Rc<Expr>> {
-        let r = self.eval(r);
+    ) -> Result<Rc<Expr>, Rc<Expr>> {
+        let r = self.eval(r, true);
         let Expr::String(r) = &*r else {
-            return None;
+            return Err(Rc::new(Expr::Apply(l, r)));
         };
         let Expr::String(v) = Rc::make_mut(&mut l) else {
             panic!();
         };
         v.extend_from_slice(r);
-        Some(l)
+        Ok(l)
     }
 
     fn get(&self, id: Id) -> Option<Rc<Expr>> {
