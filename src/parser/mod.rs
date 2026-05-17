@@ -79,25 +79,19 @@ impl<'a, I: Iterator<Item = Result<char>>> Parser<'a, I> {
 
     fn read_let(&mut self) -> Result<()> {
         self.next()?;
-        let id = self.skip_new_ident()?;
+        self.expect(Token::Ident)?;
+        let name = self.lexer.last_id().to_string();
+        self.next()?;
+
         self.expect(Token::Eq)?;
         self.skip(Token::Eq)?;
         let expr = self.read_expr()?;
+
+        let id = self.itab.insert(&name);
         self.defs.insert(id, expr.into());
+
         Ok(())
     }
-
-    /*fn read_expr(&mut self) -> Result<Expr> {
-        let mut chain = vec![self.read_item()?];
-        while !matches!(self.cur, Token::Let | Token::Eof | Token::Right | Token::Semicol) {
-            chain.push(self.read_item()?);
-        }
-        let mut res = chain.pop().unwrap();
-        for e in chain.into_iter().rev() {
-            res = Expr::Apply(e.into(), res.into());
-        }
-        Ok(res)
-    }*/
 
     fn read_expr(&mut self) -> Result<Expr> {
         let mut res = self.read_item()?;
@@ -152,11 +146,6 @@ impl<'a, I: Iterator<Item = Result<char>>> Parser<'a, I> {
         let id = self.itab.get(self.lexer.last_id());
         self.next()?;
         Ok(id)
-    }
-
-    fn skip_new_ident(&mut self) -> Result<Id> {
-        self.expect(Token::Ident)?;
-        self.read_new_ident()
     }
 
     fn read_new_ident(&mut self) -> Result<Id> {
