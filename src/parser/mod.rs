@@ -6,18 +6,27 @@ use crate::{
     err::Result,
     expr::Expr,
     i_tab::{ITab, Id},
-    parser::{lexer::Lexer, token::Token},
+    parser::{file_pos::FilePos, lexer::Lexer, token::Token},
 };
 
+mod file_pos;
 mod lexer;
 mod token;
 
 #[derive(Debug, Error)]
-pub enum ParseError {
+pub enum ParseErrorKind {
     #[error("Unexpected token `{0:?}`.")]
     UnexpectedToken(Token),
     #[error("Expected identifier.")]
     ExpectedIdentifier,
+}
+
+#[derive(Debug, Error)]
+#[error("{pos}: {kind}")]
+pub struct ParseError {
+    #[source]
+    kind: ParseErrorKind,
+    pos: FilePos,
 }
 
 pub fn parse<I: Iterator<Item = Result<char>>>(
@@ -109,7 +118,7 @@ impl<'a, I: Iterator<Item = Result<char>>> Parser<'a, I> {
             Token::Lambda => self.read_lambda(),
             Token::Left => self.read_bracket(),
             Token::Ident => self.read_existing_ident().map(Expr::Ident),
-            _ => Err(ParseError::UnexpectedToken(self.cur).into()),
+            _ => Err(self.err_unexpected_token().into()),
         }
     }
 
@@ -122,7 +131,7 @@ impl<'a, I: Iterator<Item = Result<char>>> Parser<'a, I> {
             idents.push(self.read_new_ident()?);
         }
         if idents.is_empty() {
-            return Err(ParseError::ExpectedIdentifier.into());
+            return Err(self.err_expected_identifier().into());
         }
 
         self.skip(Token::Dot)?;
@@ -166,9 +175,24 @@ impl<'a, I: Iterator<Item = Result<char>>> Parser<'a, I> {
 
     fn expect(&self, t: Token) -> Result<()> {
         if self.cur != t {
-            Err(ParseError::UnexpectedToken(self.cur).into())
+            Err(self.err_unexpected_token().into())
         } else {
             Ok(())
+        }
+    }
+
+    fn err_expected_identifier(&self) -> ParseError {
+        self.err(ParseErrorKind::ExpectedIdentifier)
+    }
+
+    fn err_unexpected_token(&self) -> ParseError {
+        self.err(ParseErrorKind::UnexpectedToken(self.cur))
+    }
+
+    fn err(&self, kind: ParseErrorKind) -> ParseError {
+        ParseError {
+            kind,
+            pos: self.lexer.last_pos(),
         }
     }
 }

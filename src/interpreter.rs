@@ -28,7 +28,11 @@ impl Interpreter {
                         return expr;
                     }
                 }
-                Expr::Lambda(_, _) | Expr::Counter(_) | Expr::Increment => {
+                Expr::Lambda(_, _)
+                | Expr::Counter(_)
+                | Expr::Increment
+                | Expr::Char
+                | Expr::String(_) => {
                     return expr;
                 }
             };
@@ -44,6 +48,8 @@ impl Interpreter {
         match &*l {
             Expr::Lambda(_, _) => Some(self.eval_apply_lambda(l, r)),
             Expr::Increment => self.eval_apply_increment(r),
+            Expr::Char => self.eval_apply_char(r),
+            Expr::String(_) => self.eval_apply_string(l, r),
             _ => None,
         }
     }
@@ -65,6 +71,31 @@ impl Interpreter {
         }
     }
 
+    fn eval_apply_char(&self, r: Rc<Expr>) -> Option<Rc<Expr>> {
+        let r = self.eval(r);
+        if let Expr::Counter(cnt) = &*r {
+            Some(Rc::new(Expr::String(vec![*cnt as u8])))
+        } else {
+            None
+        }
+    }
+
+    fn eval_apply_string(
+        &self,
+        mut l: Rc<Expr>,
+        r: Rc<Expr>,
+    ) -> Option<Rc<Expr>> {
+        let r = self.eval(r);
+        let Expr::String(r) = &*r else {
+            return None;
+        };
+        let Expr::String(v) = Rc::make_mut(&mut l) else {
+            panic!();
+        };
+        v.extend_from_slice(r);
+        Some(l)
+    }
+
     fn get(&self, id: Id) -> Option<Rc<Expr>> {
         self.top.get(&id).cloned()
     }
@@ -79,9 +110,16 @@ impl Expr {
                 }
             }
             Expr::Lambda(i, expr) if *i == id => {}
-            Expr::Counter(_) | Expr::Increment => {}
+            Expr::Counter(_)
+            | Expr::Increment
+            | Expr::Char
+            | Expr::String(_) => {}
             _ => match Rc::make_mut(self) {
-                Expr::Ident(_) | Expr::Counter(_) | Expr::Increment => {
+                Expr::Ident(_)
+                | Expr::Counter(_)
+                | Expr::Increment
+                | Expr::Char
+                | Expr::String(_) => {
                     unreachable!()
                 }
                 Expr::Apply(l, r) => {

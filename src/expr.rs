@@ -10,6 +10,8 @@ pub enum Expr {
     // Special builtins for better output.
     Counter(usize),
     Increment,
+    Char,
+    String(Vec<u8>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -56,6 +58,8 @@ impl Expr {
             }
             Expr::Counter(cnt) => _ = write!(res, ":{cnt}:"),
             Expr::Increment => *res += "$increment",
+            Expr::Char => *res += "$char",
+            Expr::String(s) => *res += &String::from_utf8_lossy(s),
         }
     }
 }

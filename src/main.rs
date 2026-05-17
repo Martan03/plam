@@ -39,6 +39,7 @@ fn start() -> Result<()> {
     // Define builtins
     defs.insert(itab.insert("$increment"), Rc::new(Expr::Increment));
     defs.insert(itab.insert("$counter"), Rc::new(Expr::Counter(0)));
+    defs.insert(itab.insert("$char"), Rc::new(Expr::Char));
 
     // Parse the code.
     let exprs = parse(&mut itab, chars, &mut defs)?;

@@ -56,11 +56,12 @@ information from a lambda expression.
 - `$increment` represents opaque function. If given any counter as argument it
   will expand to incremented counter. For any other use cases behaves as
   unbound variable.
+- `$char` creates opaque single char string which can be printed. Works only
+  with `$counter` as argument. The counter value is the byte value of the char.
+  Applying opaque string to opaque string will concatenate them. (e.g.
+  `$char $counter ($char $counter)` will create string with two NUL bytes)
 
-In future plan to add builtin `$stdin` to allow reading from input and builtins
-`$char` and `$concat` to allow creating any string as output. These all will be
-very opaque so that they cannot really by used for any computation and are used
-only for input and output.
+In future plan to add builtin `$stdin` to allow reading from input.
 
 ## Example
 

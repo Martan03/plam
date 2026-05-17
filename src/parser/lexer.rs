@@ -1,8 +1,13 @@
-use crate::{err::Result, parser::token::Token};
+use crate::{
+    err::Result,
+    parser::{file_pos::FilePos, token::Token},
+};
 
 #[derive(Debug)]
 pub struct Lexer<I> {
     input: I,
+    pos: FilePos,
+    last_pos: FilePos,
     cur: Option<char>,
     buf: String,
 }
@@ -11,18 +16,26 @@ impl<I: Iterator<Item = Result<char>>> Lexer<I> {
     pub fn new(input: I) -> Self {
         Self {
             input,
+            pos: FilePos::default(),
+            last_pos: FilePos::default(),
             cur: None,
             buf: String::new(),
         }
     }
 
-    pub fn last_id(&mut self) -> &str {
+    pub fn last_id(&self) -> &str {
         &self.buf
+    }
+
+    pub fn last_pos(&self) -> FilePos {
+        self.last_pos
     }
 
     pub fn next(&mut self) -> Result<Token> {
         self.buf.clear();
         self.skip_whitespace()?;
+
+        self.last_pos = self.pos;
 
         if let Some(s) = self.read_special()? {
             self.cur = None;
@@ -73,6 +86,9 @@ impl<I: Iterator<Item = Result<char>>> Lexer<I> {
     fn cur(&mut self) -> Result<Option<char>> {
         if self.cur.is_none() {
             self.cur = self.input.next().transpose()?;
+            if let Some(c) = self.cur {
+                self.pos.step(c);
+            }
         }
         Ok(self.cur)
     }
