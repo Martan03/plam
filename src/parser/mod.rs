@@ -25,8 +25,8 @@ pub enum ParseErrorKind {
 #[error("{pos}: {kind}")]
 pub struct ParseError {
     #[source]
-    kind: ParseErrorKind,
-    pos: FilePos,
+    pub kind: ParseErrorKind,
+    pub pos: FilePos,
 }
 
 pub fn parse<I: Iterator<Item = Result<char>>>(

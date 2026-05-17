@@ -45,6 +45,17 @@ Separate two statements `a` and `b`:
 a ; b
 ```
 
+Use line comments with `//`:
+```
+// This line is ignored
+```
+
+Use block comments with `/*`:
+```
+/* This block
+   is ignored */
+```
+
 ### Builtin functions
 
 These functions are very opaque and serve only to get more human readable

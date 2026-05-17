@@ -28,14 +28,14 @@ impl<I: Iterator<Item = Result<char>>> Lexer<I> {
     }
 
     pub fn last_pos(&self) -> FilePos {
-        self.last_pos
+        self.last_pos.clone()
     }
 
     pub fn next(&mut self) -> Result<Token> {
         self.buf.clear();
         self.skip_whitespace()?;
 
-        self.last_pos = self.pos;
+        self.last_pos = self.pos.clone();
 
         if let Some(s) = self.read_special()? {
             self.cur = None;
@@ -44,7 +44,18 @@ impl<I: Iterator<Item = Result<char>>> Lexer<I> {
 
         match self.cur()? {
             None => Ok(Token::Eof),
-            _ => self.chunk(),
+            _ => {
+                let res = self.chunk()?;
+                if self.buf == "//" {
+                    self.line_comment()?;
+                    self.next()
+                } else if self.buf == "/*" {
+                    self.block_comment()?;
+                    self.next()
+                } else {
+                    Ok(res)
+                }
+            }
         }
     }
 
@@ -74,6 +85,37 @@ impl<I: Iterator<Item = Result<char>>> Lexer<I> {
         } else {
             Ok(Token::Ident)
         }
+    }
+
+    fn line_comment(&mut self) -> Result<()> {
+        while matches!(self.cur()?, Some(c) if c != '\n') {
+            self.cur = None;
+        }
+        Ok(())
+    }
+
+    fn block_comment(&mut self) -> Result<()> {
+        let mut nest = 1;
+        while self.cur()?.is_some() {
+            if self.cur()? == Some('*') {
+                self.cur = None;
+                if self.cur()? == Some('/') {
+                    self.cur = None;
+                    nest -= 1;
+                    if nest == 0 {
+                        return Ok(());
+                    }
+                }
+            } else if self.cur()? == Some('/') {
+                self.cur = None;
+                if self.cur()? == Some('*') {
+                    nest += 1;
+                }
+            } else {
+                self.cur = None;
+            }
+        }
+        Ok(())
     }
 
     fn skip_whitespace(&mut self) -> Result<()> {

@@ -47,9 +47,11 @@ fn start() -> Result<()> {
 
     // Load the code
     for p in args.sources {
-        let mut file = BufReader::new(File::open(p)?);
+        let mut file = BufReader::new(File::open(&p)?);
         let chars = file.chars().map(|e| e.map_err(|e| e.into()));
-        exprs.append(&mut parse(&mut itab, chars, &mut defs)?);
+        let e =
+            parse(&mut itab, chars, &mut defs).map_err(|e| e.with_path(p))?;
+        exprs.extend(e);
     }
 
     // Interpret the code.

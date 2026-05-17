@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fmt::Display};
+use std::{borrow::Cow, fmt::Display, path::Path};
 
 use pareg::ArgError;
 use thiserror::Error;
@@ -32,6 +32,13 @@ impl Error {
             kind: kind.into(),
             msg: msg.into(),
         }
+    }
+
+    pub fn with_path(mut self, path: impl AsRef<Path>) -> Self {
+        if let ErrKind::Parse(pe) = &mut self.kind {
+            pe.pos.path = Some(path.as_ref().into());
+        }
+        self
     }
 }
 
