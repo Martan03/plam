@@ -21,6 +21,7 @@ pub enum ParseErrorKind {
     ExpectedIdentifier,
 }
 
+/// Error produced by parser.
 #[derive(Debug, Error)]
 #[error("{pos}: {kind}")]
 pub struct ParseError {
@@ -29,6 +30,8 @@ pub struct ParseError {
     pub pos: FilePos,
 }
 
+/// Parse the given input stream into expressions. Update the top level
+/// definitions and identifier table.
 pub fn parse<I: Iterator<Item = Result<char>>>(
     itab: &mut ITab,
     input: I,
@@ -52,6 +55,7 @@ struct Parser<'a, I> {
 }
 
 impl<'a, I: Iterator<Item = Result<char>>> Parser<'a, I> {
+    /// Create new parser.
     pub fn new(
         itab: &'a mut ITab,
         lexer: Lexer<I>,
@@ -66,6 +70,7 @@ impl<'a, I: Iterator<Item = Result<char>>> Parser<'a, I> {
         }
     }
 
+    /// Parse the input.
     pub fn parse(&mut self) -> Result<()> {
         self.next()?;
         while self.cur != Token::Eof {

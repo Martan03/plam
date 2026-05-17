@@ -1,5 +1,6 @@
 use termal::{gradient, printacln};
 
+/// Print help to stdout.
 pub fn help() {
     let v = option_env!("CARGO_PKG_VERSION").unwrap_or("unknown");
     let signature = gradient("BonnyAD9", (250, 50, 170), (180, 50, 240));

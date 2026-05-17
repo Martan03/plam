@@ -2,15 +2,23 @@ use std::{fmt::Write, rc::Rc};
 
 use crate::i_tab::{ITab, Id};
 
+/// Expressions that can occur in interpreted lambda calculus.
 #[derive(Debug, Clone)]
 pub enum Expr {
+    /// Identifier.
     Ident(Id),
+    /// Application of expression to argument.
     Apply(Rc<Expr>, Rc<Expr>),
+    /// Definition of lambda function.
     Lambda(Id, Rc<Expr>),
     // Special builtins for better output.
+    /// Internal counter type.
     Counter(usize),
+    /// Builtin function that can increment counter.
     Increment,
+    /// Builtin function that can create string from counter.
     Char,
+    /// Internal string type.
     String(Vec<u8>),
 }
 
@@ -23,6 +31,8 @@ enum LastType {
 }
 
 impl Expr {
+    /// Format the expression into a valid lambda calculus string when given
+    /// table of identifiers.
     pub fn to_string(&self, itab: &ITab, res: &mut String) {
         self.to_string_inner(itab, res, LastType::Root);
     }

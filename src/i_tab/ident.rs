@@ -1,3 +1,4 @@
+/// Identifier within the code.
 #[derive(Debug)]
 pub struct Ident {
     name: String,

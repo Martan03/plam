@@ -2,15 +2,20 @@ use std::{collections::HashMap, rc::Rc};
 
 use crate::{expr::Expr, i_tab::Id};
 
+/// Interpreter capable of interpreting lambda code.
 pub struct Interpreter {
     top: HashMap<Id, Rc<Expr>>,
 }
 
 impl Interpreter {
+    /// Create new interpreter.
     pub fn new(top: HashMap<Id, Rc<Expr>>) -> Self {
         Self { top }
     }
 
+    /// Evaluate the given expression. If `expand` is true it will be evaluated
+    /// to the furthest expanded version even if it doesn't produce single
+    /// value.
     pub fn eval(&self, mut expr: Rc<Expr>, expand: bool) -> Rc<Expr> {
         loop {
             expr = match &*expr {

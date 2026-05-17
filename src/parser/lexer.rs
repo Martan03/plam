@@ -3,6 +3,7 @@ use crate::{
     parser::{file_pos::FilePos, token::Token},
 };
 
+/// Lexer capable of producing stream tokens from stream of characters.
 #[derive(Debug)]
 pub struct Lexer<I> {
     input: I,
@@ -13,6 +14,7 @@ pub struct Lexer<I> {
 }
 
 impl<I: Iterator<Item = Result<char>>> Lexer<I> {
+    /// Create new lexer from stream of characters.
     pub fn new(input: I) -> Self {
         Self {
             input,
@@ -23,14 +25,18 @@ impl<I: Iterator<Item = Result<char>>> Lexer<I> {
         }
     }
 
+    /// Get name of identifier. The value is unspecified if the last returned
+    /// token was not identifier.
     pub fn last_id(&self) -> &str {
         &self.buf
     }
 
+    /// Get the position of the last token.
     pub fn last_pos(&self) -> FilePos {
         self.last_pos.clone()
     }
 
+    /// Get the next token.
     pub fn next(&mut self) -> Result<Token> {
         self.buf.clear();
         self.skip_whitespace()?;

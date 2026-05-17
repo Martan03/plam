@@ -4,13 +4,18 @@ use pareg::Pareg;
 
 use crate::{cli::help, err::Result};
 
+/// Arguments pared by plam.
 #[derive(Debug, Default)]
 pub struct Args {
+    /// The source files.
     pub sources: Vec<PathBuf>,
+    /// Whether the lambda expression should be shown in its entierely expanded
+    /// form.
     pub expand: bool,
 }
 
 impl Args {
+    /// Parse arguments.
     pub fn parse(mut args: Pareg) -> Result<Self> {
         let mut res = Args::default();
         res.parse_inner(&mut args)?;

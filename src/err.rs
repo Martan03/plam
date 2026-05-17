@@ -17,6 +17,7 @@ pub enum ErrKind {
     Pareg(#[from] ArgError),
 }
 
+/// Unification of all errors in this project with optional additional message.
 #[derive(Debug)]
 pub struct Error {
     pub kind: ErrKind,
