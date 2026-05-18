@@ -40,7 +40,7 @@ const editorPlugin = ViewPlugin.fromClass(
 
 const editorTheme = EditorView.baseTheme({
     ".keyword": { color: "#4C8DFF", fontWeight: "italic" },
-    ".lambda": { color: "#e06c75", fontWeight: "bold" },
+    ".lambda": { color: "#ED478F", fontWeight: "bold" },
     ".operator": { color: "#E5DBA0" },
     ".comment": { color: "#666666", fontWeight: "italic" },
 });

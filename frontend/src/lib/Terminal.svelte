@@ -1,7 +1,7 @@
 <script lang="ts">
     let { output = $bindable() } = $props();
 
-    let termHeight = $state(150);
+    let termHeight = $state(200);
     let isMaximized = $state(false);
     let isDragging = $state(false);
 
@@ -32,12 +32,12 @@
     class:maximized={isMaximized}
     style="--term-height: {termHeight}px"
 >
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div
+    <button
         class="resizer"
         class:dragging={isDragging}
         onpointerdown={startDrag}
-    ></div>
+        aria-label="Resize terminal"
+    ></button>
 
     <div class="terminal-header">
         <span>Program output</span>
@@ -79,6 +79,7 @@
         cursor: row-resize;
         z-index: 10;
         background-color: transparent;
+        border: none;
     }
 
     .resizer:hover,

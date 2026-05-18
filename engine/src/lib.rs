@@ -38,6 +38,7 @@ pub fn eval_lambda(input: &str) -> Result<String> {
         buf.clear();
         val.to_string(&itab, &mut buf);
         res.push_str(&buf);
+        res.push('\n');
     }
 
     Ok(res)
