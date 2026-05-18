@@ -20,6 +20,8 @@ pub enum Expr {
     Char,
     /// Internal string type.
     String(Vec<u8>),
+    /// Stdin
+    Stdin(usize),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -31,6 +33,30 @@ enum LastType {
 }
 
 impl Expr {
+    /// Create lambda with multiple arguments.
+    pub fn lambda<I: DoubleEndedIterator<Item = Id>>(
+        ids: impl IntoIterator<Item = Id, IntoIter = I>,
+        body: impl Into<Rc<Expr>>,
+    ) -> Rc<Expr> {
+        let mut res = body.into();
+        for id in ids.into_iter().rev() {
+            res = Expr::Lambda(id, res).into();
+        }
+        res
+    }
+
+    /// Apply multiple arguments to an expression.
+    pub fn apply<E: Into<Rc<Expr>>>(
+        left: impl Into<Rc<Expr>>,
+        right: impl IntoIterator<Item = E>,
+    ) -> Rc<Expr> {
+        let mut res = left.into();
+        for r in right {
+            res = Expr::Apply(res, r.into()).into();
+        }
+        res
+    }
+
     /// Format the expression into a valid lambda calculus string when given
     /// table of identifiers.
     pub fn to_string(&self, itab: &ITab, res: &mut String) {
@@ -70,6 +96,8 @@ impl Expr {
             Expr::Increment => *res += "$increment",
             Expr::Char => *res += "$char",
             Expr::String(s) => *res += &String::from_utf8_lossy(s),
+            Expr::Stdin(0) => *res += "$stdin",
+            Expr::Stdin(n) => _ = write!(res, "$stdin<{n}>"),
         }
     }
 }
