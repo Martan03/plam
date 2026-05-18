@@ -1,12 +1,13 @@
 <script lang="ts">
     import { oneDark } from "@codemirror/theme-one-dark";
     import { basicSetup, EditorView } from "codemirror";
-    import { editorSyntax } from "./highlighter";
+    import { editorSyntax } from "../highlighter";
 
     let { code = $bindable() } = $props();
 
+    let view: EditorView;
     function createEditor(node: HTMLElement) {
-        const view = new EditorView({
+        view = new EditorView({
             doc: code,
             extensions: [
                 basicSetup,
@@ -27,6 +28,14 @@
             },
         };
     }
+
+    $effect(() => {
+        if (view && code !== view.state.doc.toString()) {
+            view.dispatch({
+                changes: { from: 0, to: view.state.doc.length, insert: code },
+            });
+        }
+    });
 </script>
 
 <div class="editor" use:createEditor></div>
@@ -34,6 +43,8 @@
 <style>
     .editor {
         overflow: hidden;
+        flex: 1;
+        min-height: 0;
     }
 
     :global(.cm-editor) {

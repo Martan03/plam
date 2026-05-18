@@ -1,7 +1,9 @@
 <script lang="ts">
+    import { persisted } from "../storage.svelte";
+
     let { output = $bindable() } = $props();
 
-    let termHeight = $state(200);
+    const termHeight = persisted("plam-term-height", 200);
     let isMaximized = $state(false);
     let isDragging = $state(false);
 
@@ -18,7 +20,7 @@
 
         const height = window.innerHeight - e.clientY;
         if (height > 30) {
-            termHeight = height;
+            termHeight.value = height;
         }
     }
 
@@ -30,7 +32,7 @@
 <div
     class="terminal"
     class:maximized={isMaximized}
-    style="--term-height: {termHeight}px"
+    style="--term-height: {termHeight.value}px"
 >
     <button
         class="resizer"

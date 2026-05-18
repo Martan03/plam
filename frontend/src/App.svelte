@@ -3,12 +3,16 @@
     import init, { eval_lambda } from "../../engine/pkg/plam.js";
     import initialCode from "../../pl-examples/stdlib.pl?raw";
 
-    import Editor from "./lib/Editor.svelte";
-    import Terminal from "./lib/Terminal.svelte";
+    import Editor from "./lib/components/Editor.svelte";
+    import Terminal from "./lib/components/Terminal.svelte";
+    import { persisted } from "./lib/storage.svelte.js";
+    import Dialog from "./lib/components/Dialog.svelte";
 
-    let outputValue = "System ready. Click 'Run' to evaluate.";
-    let currentCode = initialCode;
-    let isWasmLoaded = false;
+    let outputValue = $state("System ready. Click 'Run' to evaluate.");
+    let isWasmLoaded = $state(false);
+
+    const currentCode = persisted("plam-code", initialCode);
+    let resetDialog: ReturnType<typeof Dialog>;
 
     onMount(async () => {
         await init();
@@ -18,24 +22,43 @@
     function runEvaluation() {
         if (!isWasmLoaded) return;
         try {
-            outputValue = eval_lambda(currentCode);
+            outputValue = eval_lambda(currentCode.value);
         } catch (e) {
             outputValue = `Error: ${e}`;
         }
+    }
+
+    function showReset() {
+        resetDialog.show();
+    }
+
+    function resetCode() {
+        currentCode.value = initialCode;
     }
 </script>
 
 <main class="app-container">
     <header class="toolbar">
         <h1>plam</h1>
-        <button onclick={runEvaluation} disabled={!isWasmLoaded}>
-            ▶ Run
-        </button>
+        <div class="controls">
+            <button class="secondary" onclick={showReset}>Reset Code</button>
+            <button onclick={runEvaluation} disabled={!isWasmLoaded}>
+                ▶ Run
+            </button>
+        </div>
     </header>
 
-    <Editor bind:code={currentCode} />
+    <Editor bind:code={currentCode.value} />
     <Terminal output={outputValue} />
 </main>
+
+<Dialog
+    bind:this={resetDialog}
+    title="Reset code?"
+    message="This will reset your current code. This action cannot be undone."
+    confirm="Reset"
+    onconfirm={resetCode}
+/>
 
 <style>
     * {
@@ -68,19 +91,36 @@
         font-weight: 600;
     }
 
+    .toolbar .controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
     .toolbar button {
         padding: 0.5rem 1.5rem;
         background: #3acbaf;
         color: #282c34;
-        border: none;
+        border: 1px solid transparent;
         border-radius: 4px;
         font-weight: bold;
         cursor: pointer;
         transition: background 0.1s;
     }
 
+    .toolbar button.secondary {
+        background: transparent;
+        color: #abb2bf;
+        border: 1px solid #4b5263;
+    }
+
     .toolbar button:hover {
         background: #30ad94;
+    }
+
+    .toolbar button.secondary:hover {
+        background: #2c313a;
+        color: #ffffff;
     }
 
     .toolbar button:disabled {
