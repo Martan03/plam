@@ -2,6 +2,7 @@ use std::{borrow::Cow, fmt::Display, path::Path};
 
 use pareg::ArgError;
 use thiserror::Error;
+use wasm_bindgen::JsValue;
 
 use crate::parser::ParseError;
 
@@ -68,5 +69,11 @@ impl Display for Error {
 impl<T: Into<ErrKind>> From<T> for Error {
     fn from(value: T) -> Self {
         Self::new(value, "")
+    }
+}
+
+impl From<Error> for JsValue {
+    fn from(value: Error) -> Self {
+        JsValue::from_str(&value.to_string())
     }
 }
