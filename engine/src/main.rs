@@ -1,5 +1,10 @@
 use std::{
-    collections::HashMap, fs::File, io::BufReader, process::ExitCode, rc::Rc,
+    collections::HashMap,
+    fs::File,
+    io::BufReader,
+    io::{BufReader, StdinLock},
+    process::ExitCode,
+    rc::Rc,
 };
 
 use pareg::Pareg;
@@ -7,8 +12,19 @@ use termal::eprintacln;
 use utf8_chars::BufReadCharsExt;
 
 use crate::{
-    cli::Args, err::Result, expr::Expr, i_tab::ITab,
-    interpreter::init_interpreter, parser::parse,
+    cli::Args,
+    err::Result,
+    expr::Expr,
+    expr::{ExprId, ExprTree},
+    i_tab::ITab,
+    i_tab::{ITab, Id},
+    interpreter::Interpreter,
+    interpreter::init_interpreter,
+    lam_repr::{
+        Bottom, First, Incr, List, PeanoChars, Second, StdinList, Triple,
+        YComb,
+    },
+    parser::parse,
 };
 
 mod cli;
@@ -40,29 +56,31 @@ fn start() -> Result<()> {
     // Prepare data containers
     let mut itab = ITab::new();
     let mut defs = HashMap::new();
+    let mut et = ExprTree::new();
     let mut exprs = vec![];
     // Define builtins
-    defs.insert(itab.insert("$increment"), Rc::new(Expr::Increment));
-    defs.insert(itab.insert("$counter"), Rc::new(Expr::Counter(0)));
-    defs.insert(itab.insert("$char"), Rc::new(Expr::Char));
-    defs.insert(itab.insert("$stdin"), Rc::new(Expr::Stdin(0)));
+    defs.insert(itab.insert("$increment"), et.increment());
+    defs.insert(itab.insert("$counter"), et.counter(0));
+    defs.insert(itab.insert("$char"), et.char());
+    defs.insert(itab.insert("$stdin"), et.stdin(0));
 
     // Load the code
     for p in args.sources {
         let mut file = BufReader::new(File::open(&p)?);
         let chars = file.chars().map(|e| e.map_err(|e| e.into()));
-        let e =
-            parse(&mut itab, chars, &mut defs).map_err(|e| e.with_path(p))?;
+        let e = parse(&mut itab, &mut et, chars, &mut defs)
+            .map_err(|e| e.with_path(p))?;
         exprs.extend(e);
     }
 
     // Interpret the code.
-    let mut int = init_interpreter(defs, &mut itab);
+    let mut int = init_interpreter(&mut et, defs, &mut itab);
+    int.cache_limit = args.cache_limit;
     let mut buf = String::new();
     for expr in exprs {
-        let val = int.eval(expr, args.expand);
+        int.eval(&expr);
         buf.clear();
-        val.to_string(&itab, &mut buf);
+        int.et.to_string(&expr, int.itab, &mut buf);
         println!("{buf}");
     }
 
