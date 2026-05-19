@@ -3,7 +3,7 @@ use std::{collections::HashMap, rc::Rc};
 use wasm_bindgen::prelude::wasm_bindgen;
 
 use crate::{
-    err::Result, expr::Expr, i_tab::ITab, interpreter::Interpreter,
+    err::Result, expr::Expr, i_tab::ITab, interpreter::init_interpreter,
     parser::parse,
 };
 
@@ -11,6 +11,7 @@ mod err;
 mod expr;
 mod i_tab;
 mod interpreter;
+mod lam_repr;
 mod parser;
 
 #[wasm_bindgen]
@@ -23,13 +24,14 @@ pub fn eval_lambda(input: &str) -> Result<String> {
     defs.insert(itab.insert("$increment"), Rc::new(Expr::Increment));
     defs.insert(itab.insert("$counter"), Rc::new(Expr::Counter(0)));
     defs.insert(itab.insert("$char"), Rc::new(Expr::Char));
+    defs.insert(itab.insert("$stdin"), Rc::new(Expr::Stdin(0)));
 
     let chars = input.chars().map(|e| Ok(e));
     let e = parse(&mut itab, chars, &mut defs)?;
     exprs.extend(e);
 
     // Interpret the code.
-    let int = Interpreter::new(defs);
+    let mut int = init_interpreter(defs, &mut itab);
     let mut buf = String::new();
 
     let mut res = String::new();
@@ -37,6 +39,7 @@ pub fn eval_lambda(input: &str) -> Result<String> {
         let val = int.eval(expr, false);
         buf.clear();
         val.to_string(&itab, &mut buf);
+
         res.push_str(&buf);
         res.push('\n');
     }

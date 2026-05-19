@@ -1,11 +1,39 @@
-use std::{collections::HashMap, io::BufRead, rc::Rc};
+use std::{
+    collections::HashMap,
+    io::{BufRead, StdinLock},
+    rc::Rc,
+};
 
-use crate::{expr::Expr, i_tab::Id, lam_repr::StdinList};
+use crate::{
+    expr::Expr,
+    i_tab::{ITab, Id},
+    lam_repr::{
+        Bottom, First, Incr, List, PeanoChars, Second, StdinList, Triple,
+        YComb,
+    },
+};
 
 /// Interpreter capable of interpreting lambda code.
 pub struct Interpreter<R> {
     top: HashMap<Id, Rc<Expr>>,
     stdin: StdinList<R>,
+}
+
+pub fn init_interpreter(
+    defs: HashMap<Id, Rc<Expr>>,
+    itab: &mut ITab,
+) -> Interpreter<StdinLock<'static>> {
+    let y = YComb::new(itab);
+    let first = First::new(itab);
+    let triple = Triple::new(itab);
+    let second = Second::new(itab);
+    let incr = Incr::new(itab);
+    let bottom = Bottom::new(y, first.clone());
+    let list = List::new(triple, first, second.clone(), bottom.clone(), itab);
+    let pean_chars = PeanoChars::new(&incr, second);
+    let stdin = std::io::stdin().lock();
+    let stdin_list = StdinList::new(stdin, pean_chars, list, bottom);
+    Interpreter::new(defs, stdin_list)
 }
 
 impl<R: BufRead> Interpreter<R> {

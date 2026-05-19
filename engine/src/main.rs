@@ -1,9 +1,5 @@
 use std::{
-    collections::HashMap,
-    fs::File,
-    io::{BufReader, StdinLock},
-    process::ExitCode,
-    rc::Rc,
+    collections::HashMap, fs::File, io::BufReader, process::ExitCode, rc::Rc,
 };
 
 use pareg::Pareg;
@@ -11,15 +7,8 @@ use termal::eprintacln;
 use utf8_chars::BufReadCharsExt;
 
 use crate::{
-    cli::Args,
-    err::Result,
-    expr::Expr,
-    i_tab::{ITab, Id},
-    interpreter::Interpreter,
-    lam_repr::{
-        Bottom, First, Incr, List, PeanoChars, Second, StdinList, Triple, YComb,
-    },
-    parser::parse,
+    cli::Args, err::Result, expr::Expr, i_tab::ITab,
+    interpreter::init_interpreter, parser::parse,
 };
 
 mod cli;
@@ -78,21 +67,4 @@ fn start() -> Result<()> {
     }
 
     Ok(())
-}
-
-fn init_interpreter(
-    defs: HashMap<Id, Rc<Expr>>,
-    itab: &mut ITab,
-) -> Interpreter<StdinLock<'static>> {
-    let y = YComb::new(itab);
-    let first = First::new(itab);
-    let triple = Triple::new(itab);
-    let second = Second::new(itab);
-    let incr = Incr::new(itab);
-    let bottom = Bottom::new(y, first.clone());
-    let list = List::new(triple, first, second.clone(), bottom.clone(), itab);
-    let pean_chars = PeanoChars::new(&incr, second);
-    let stdin = std::io::stdin().lock();
-    let stdin_list = StdinList::new(stdin, pean_chars, list, bottom);
-    Interpreter::new(defs, stdin_list)
 }
