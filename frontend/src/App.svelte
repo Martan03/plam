@@ -5,14 +5,16 @@
 
     import Editor from "./lib/components/Editor.svelte";
     import Terminal from "./lib/components/Terminal.svelte";
-    import { persisted } from "./lib/storage.svelte.js";
-    import Dialog from "./lib/components/Dialog.svelte";
+    import { createWorkspace } from "./lib/state/workspace.svelte.js";
+    import FileExplorer from "./lib/components/FileExplorer.svelte";
+    import ConfirmDialog from "./lib/components/dialogs/ConfirmDialog.svelte";
 
     let outputValue = $state("System ready. Click 'Run' to evaluate.");
     let isWasmLoaded = $state(false);
 
-    const currentCode = persisted("plam-code", initialCode);
-    let resetDialog: ReturnType<typeof Dialog>;
+    const workspace = createWorkspace(initialCode);
+
+    let resetDialog: ReturnType<typeof ConfirmDialog>;
 
     onMount(async () => {
         await init();
@@ -22,7 +24,7 @@
     function runEvaluation() {
         if (!isWasmLoaded) return;
         try {
-            outputValue = eval_lambda(currentCode.value);
+            outputValue = eval_lambda(workspace.currentCode);
         } catch (e) {
             outputValue = `Error: ${e}`;
         }
@@ -33,7 +35,7 @@
     }
 
     function resetCode() {
-        currentCode.value = initialCode;
+        workspace.currentCode = initialCode;
     }
 </script>
 
@@ -48,11 +50,17 @@
         </div>
     </header>
 
-    <Editor bind:code={currentCode.value} />
-    <Terminal output={outputValue} />
+    <div class="content">
+        <FileExplorer {workspace} />
+
+        <div class="editor">
+            <Editor bind:code={workspace.currentCode} />
+            <Terminal output={outputValue} />
+        </div>
+    </div>
 </main>
 
-<Dialog
+<ConfirmDialog
     bind:this={resetDialog}
     title="Reset code?"
     message="This will reset your current code. This action cannot be undone."
@@ -74,6 +82,19 @@
         color: #abb2bf;
         font-family: sans-serif;
         text-align: left;
+    }
+
+    .content {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .editor {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0;
     }
 
     .toolbar {

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { persisted } from "../storage.svelte";
+    import { persisted } from "../state/storage.svelte";
 
     let { output = $bindable() } = $props();
 

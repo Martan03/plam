@@ -1,29 +1,31 @@
 <script lang="ts">
+    import type { Snippet } from "svelte";
+
     let {
-        title = "Are you sure?",
-        message,
-        confirm = "Confirm",
-        onconfirm,
+        title,
+        children,
+        actions,
+    }: {
+        title: string;
+        children: Snippet;
+        actions: Snippet;
     } = $props();
 
     let dialog: HTMLDialogElement;
 
     export const show = () => dialog.showModal();
     export const close = () => dialog.close();
-
-    function handleConfirm() {
-        onconfirm();
-        close();
-    }
 </script>
 
 <dialog bind:this={dialog}>
     <h2>{title}</h2>
-    <p>{message}</p>
+
+    <div class="content">
+        {@render children()}
+    </div>
 
     <div class="actions">
-        <button class="cancel-btn" onclick={close}>Cancel</button>
-        <button class="confirm-btn" onclick={handleConfirm}>{confirm}</button>
+        {@render actions()}
     </div>
 </dialog>
 
@@ -52,10 +54,8 @@
         color: #9aeddc;
     }
 
-    dialog p {
-        margin: 0 0 1.5rem 0;
-        font-size: 0.95rem;
-        line-height: 1.4;
+    .content {
+        margin-bottom: 1.5rem;
     }
 
     .actions {
@@ -64,7 +64,7 @@
         gap: 1rem;
     }
 
-    .actions button {
+    :global(.dialog-btn) {
         padding: 0.5rem 1.25rem;
         border-radius: 4px;
         font-weight: bold;
@@ -73,23 +73,39 @@
         transition: background 0.1s;
     }
 
-    .cancel-btn {
+    :global(.dialog-btn:disabled) {
+        background: #4b5263 !important;
+        color: #abb2bf !important;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    :global(.cancel-btn) {
         background: transparent;
         color: #abb2bf;
         border: 1px solid #4b5263 !important;
     }
 
-    .cancel-btn:hover {
+    :global(.cancel-btn:hover:not(:disabled)) {
         background: #2c313a;
         color: #ffffff;
     }
 
-    .confirm-btn {
+    :global(.danger-btn) {
         background: #e06c75;
         color: #282c34;
     }
 
-    .confirm-btn:hover {
+    :global(.danger-btn:hover:not(:disabled)) {
         background: #be5046;
+    }
+
+    :global(.primary-btn) {
+        background: #3acbaf;
+        color: #282c34;
+    }
+
+    :global(.primary-btn:hover:not(:disabled)) {
+        background: #30ad94;
     }
 </style>
