@@ -6,6 +6,7 @@
     let { workspace } = $props();
 
     const width = persisted("plam-menu-width", 200);
+    let isDragging = $state(false);
 
     let deleteDialog: ReturnType<typeof ConfirmDialog>;
     let newDialog: ReturnType<typeof PromptDialog>;
@@ -27,9 +28,34 @@
             fileToDelete = null;
         }
     }
+
+    function startDrag(e: PointerEvent) {
+        isDragging = true;
+        e.preventDefault();
+    }
+
+    function onPointerMove(e: PointerEvent) {
+        if (!isDragging) return;
+
+        const newWidth = e.clientX;
+        if (newWidth > 5) {
+            width.value = newWidth;
+        }
+    }
+
+    const onPointerUp = () => (isDragging = false);
 </script>
 
+<svelte:window onpointermove={onPointerMove} onpointerup={onPointerUp} />
+
 <aside style="--menu-width: {width.value}px">
+    <button
+        class="resizer"
+        class:dragging={isDragging}
+        onpointerdown={startDrag}
+        aria-label="Resize file explorer"
+    ></button>
+
     <div class="header">
         <span>Files</span>
         <button class="add-btn" onclick={promptNew} title="New File">+</button>
@@ -79,6 +105,24 @@
         display: flex;
         flex-direction: column;
         flex-shrink: 0;
+        position: relative;
+    }
+
+    .resizer {
+        position: absolute;
+        right: -4px;
+        top: 0;
+        bottom: 0;
+        width: 6px;
+        cursor: col-resize;
+        z-index: 10;
+        background-color: transparent;
+        border: none;
+    }
+
+    .resizer:hover,
+    .resizer.dragging {
+        background-color: #3acbaf50;
     }
 
     .header {
@@ -105,6 +149,7 @@
         align-items: center;
         justify-content: center;
         padding-bottom: 0.065rem;
+        outline: none;
     }
 
     .add-btn:hover {
@@ -116,6 +161,7 @@
         list-style: none;
         margin: 0;
         padding: 0;
+        overflow-x: hidden;
         overflow-y: auto;
     }
 
@@ -125,6 +171,7 @@
         justify-content: space-between;
         color: #abb2bf;
         padding: 0.4rem 1rem;
+        overflow: hidden;
     }
 
     .file-item:hover {

@@ -29,6 +29,7 @@
 
     function handleKey(e: KeyboardEvent) {
         if (e.key === "Enter") {
+            e.preventDefault();
             handleSubmit();
         }
     }
