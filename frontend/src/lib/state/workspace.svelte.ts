@@ -6,10 +6,12 @@ export function createWorkspace(initCode: string) {
         storedFiles ? JSON.parse(storedFiles) : { "stdlib.pl": initCode },
     );
 
-    let active = $state<string>(storedActive || "stdlib.pl");
-    if (!files[active]) {
-        active = Object.keys(files)[0];
+    let initActive = storedActive || "stdlib.pl";
+    if (!files[initActive]) {
+        initActive = Object.keys(files)[0];
     }
+
+    let active = $state<string>(initActive);
 
     function save() {
         localStorage.setItem("plam-files", JSON.stringify(files));

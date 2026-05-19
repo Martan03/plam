@@ -2,14 +2,16 @@
     import { persisted } from "../state/storage.svelte";
     import ConfirmDialog from "./dialogs/ConfirmDialog.svelte";
     import PromptDialog from "./dialogs/PromptDialog.svelte";
+    import SettingsDialog from "./SettingsDialog.svelte";
 
-    let { workspace } = $props();
+    let { workspace, isVisible = $bindable(true) } = $props();
 
     const width = persisted("plam-menu-width", 200);
     let isDragging = $state(false);
 
     let deleteDialog: ReturnType<typeof ConfirmDialog>;
     let newDialog: ReturnType<typeof PromptDialog>;
+    let settingsDialog: ReturnType<typeof SettingsDialog>;
 
     let fileToDelete = $state<string | null>(null);
 
@@ -48,7 +50,7 @@
 
 <svelte:window onpointermove={onPointerMove} onpointerup={onPointerUp} />
 
-<aside style="--menu-width: {width.value}px">
+<aside style="--menu-width: {width.value}px" class:hidden={!isVisible}>
     <button
         class="resizer"
         class:dragging={isDragging}
@@ -61,7 +63,7 @@
         <button class="add-btn" onclick={promptNew} title="New File">+</button>
     </div>
 
-    <ul>
+    <ul class="file-list">
         {#each workspace.files as file}
             <li class="file-item" class:active={workspace.active === file}>
                 <button class="sel-btn" onclick={() => workspace.select(file)}>
@@ -79,6 +81,16 @@
             </li>
         {/each}
     </ul>
+
+    <div class="footer">
+        <button
+            class="settings-btn"
+            title="Open Settings"
+            onclick={() => settingsDialog.show()}
+        >
+            <span class="icon">⚙</span> Settings
+        </button>
+    </div>
 </aside>
 
 <ConfirmDialog
@@ -97,6 +109,8 @@
     onsubmit={(filename: string) => workspace.add(filename)}
 />
 
+<SettingsDialog bind:this={settingsDialog} />
+
 <style>
     aside {
         width: var(--menu-width);
@@ -106,6 +120,12 @@
         flex-direction: column;
         flex-shrink: 0;
         position: relative;
+        transition: margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    aside.hidden {
+        margin-left: calc(var(--menu-width) * -1);
+        border-right: none;
     }
 
     .resizer {
@@ -122,7 +142,7 @@
 
     .resizer:hover,
     .resizer.dragging {
-        background-color: #3acbaf50;
+        background-color: color-mix(in srgb, var(--primary) 50%, transparent);
     }
 
     .header {
@@ -157,15 +177,17 @@
         background: #2c313a;
     }
 
-    ul {
+    .file-list {
         list-style: none;
         margin: 0;
         padding: 0;
         overflow-x: hidden;
         overflow-y: auto;
+        flex: 1;
     }
 
-    .file-item {
+    .file-item,
+    .settings-btn {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -174,14 +196,15 @@
         overflow: hidden;
     }
 
-    .file-item:hover {
+    .file-item:hover,
+    .settings-btn:hover {
         background-color: #2c313a;
     }
 
     .file-item.active {
         background-color: #2c313a;
-        color: #3acbaf;
-        border-left: 3px solid #3acbaf;
+        color: var(--primary, #3acbaf);
+        border-left: 3px solid var(--primary, #3acbaf);
         padding-left: calc(1rem - 3px);
     }
 
@@ -218,5 +241,33 @@
 
     .delete-btn:hover {
         font-weight: bold;
+    }
+
+    .footer {
+        padding: 0.5rem 0;
+        border-top: 1px solid #181a1f;
+        background-color: #21252b;
+    }
+
+    .settings-btn {
+        width: 100%;
+        justify-content: flex-start;
+        background: inherit;
+        border: none;
+        font-family: inherit;
+        font-size: 0.9rem;
+        color: inherit;
+        cursor: pointer;
+    }
+
+    .settings-btn .icon {
+        margin-right: 0.7rem;
+        font-size: 1.1rem;
+        padding-bottom: 2px;
+    }
+
+    .settings-btn:hover {
+        background-color: #2c313a;
+        color: #ffffff;
     }
 </style>

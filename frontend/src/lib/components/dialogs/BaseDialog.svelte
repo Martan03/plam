@@ -5,10 +5,12 @@
         title,
         children,
         actions,
+        width = "400px",
     }: {
         title: string;
         children: Snippet;
         actions: Snippet;
+        width?: string;
     } = $props();
 
     let dialog: HTMLDialogElement;
@@ -17,7 +19,7 @@
     export const close = () => dialog.close();
 </script>
 
-<dialog bind:this={dialog}>
+<dialog bind:this={dialog} style="--dialog-width: {width};">
     <h2>{title}</h2>
 
     <div class="content">
@@ -35,8 +37,8 @@
         color: #abb2bf;
         border: 1px solid #181a1f;
         border-radius: 8px;
-        padding: 1.5rem;
-        width: 400px;
+        padding: 1.3rem 1.5rem;
+        width: var(--dialog-width);
         max-width: 90vw;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         font-family: "Segoe UI", Roboto, sans-serif;
@@ -51,7 +53,7 @@
     dialog h2 {
         margin: 0 0 1rem 0;
         font-size: 1.25rem;
-        color: #9aeddc;
+        color: color-mix(in srgb, var(--primary, #3acbaf) 35%, white 65%);
     }
 
     .content {
@@ -101,11 +103,11 @@
     }
 
     :global(.primary-btn) {
-        background: #3acbaf;
+        background: var(--primary, #3acbaf);
         color: #282c34;
     }
 
     :global(.primary-btn:hover:not(:disabled)) {
-        background: #30ad94;
+        background: color-mix(in srgb, var(--primary, #3acbaf), black 20%);
     }
 </style>

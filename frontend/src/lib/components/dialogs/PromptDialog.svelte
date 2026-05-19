@@ -85,6 +85,6 @@
 
     input:focus {
         outline: none;
-        border-color: #3acbaf;
+        border-color: var(--primary, #3acbaf);
     }
 </style>

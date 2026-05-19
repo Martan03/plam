@@ -86,7 +86,7 @@
 
     .resizer:hover,
     .resizer.dragging {
-        background-color: #3acbaf50;
+        background-color: color-mix(in srgb, var(--primary) 50%, transparent);
     }
 
     .terminal-header {
