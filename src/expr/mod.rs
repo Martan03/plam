@@ -40,10 +40,12 @@ enum LastType {
 }
 
 impl ExprTree {
+    /// Allocate new identifier expression.
     pub fn ident(&mut self, id: Id) -> ExprId {
         self.insert(Expr::Ident(id))
     }
 
+    /// Allocate new apply expression.
     pub fn apply(
         &mut self,
         left: impl Into<ExprId>,
@@ -52,22 +54,27 @@ impl ExprTree {
         self.insert(Expr::Apply(left.into(), right.into()))
     }
 
+    /// Allocate new lambda expression.
     pub fn lambda(&mut self, id: Id, body: impl Into<ExprId>) -> ExprId {
         self.insert(Expr::Lambda(id, body.into()))
     }
 
+    /// Allocate new counter expression.
     pub fn counter(&mut self, cnt: usize) -> ExprId {
         self.insert(Expr::Counter(cnt))
     }
 
+    /// Allocate new increment expression.
     pub fn increment(&mut self) -> ExprId {
         self.insert(Expr::Increment)
     }
 
+    /// Allocate new char expression.
     pub fn char(&mut self) -> ExprId {
         self.insert(Expr::Char)
     }
 
+    /// Allocate new stdin expression.
     pub fn stdin(&mut self, pos: usize) -> ExprId {
         self.insert(Expr::Stdin(pos))
     }

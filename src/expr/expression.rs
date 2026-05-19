@@ -2,13 +2,17 @@ use std::mem;
 
 use crate::expr::{Expr, ExprId, WeakExprId, may_ref::MayRef};
 
+/// Expression stored in expression tree.
 #[derive(Debug)]
 pub struct Expression {
+    /// Id of the expression.
     pub id: WeakExprId,
+    /// The unerlaying expression. Possibly reference.
     pub expr: MayRef,
 }
 
 impl Expression {
+    /// Create new unreferenced expression.
     pub fn new(id: &ExprId, expr: Expr) -> Self {
         Self {
             id: id.downgrade(),
@@ -16,6 +20,7 @@ impl Expression {
         }
     }
 
+    /// Remove this expression and get ids of all previously owned subtrees.
     pub fn free(&mut self, freed: &mut Vec<usize>) {
         match mem::take(&mut self.expr) {
             MayRef::Ref(r) => {

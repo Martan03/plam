@@ -270,23 +270,29 @@ impl ExprTree {
     }
 }
 
+/// Lazily allocate expression id.
 pub struct LazyExpr {
     value: Option<ExprId>,
 }
 
 impl LazyExpr {
+    /// Create unallocated expression id.
     pub fn empty() -> Self {
         Self { value: None }
     }
 
+    /// Set the expression.
     pub fn set(&mut self, expr: ExprId) {
         self.value = Some(expr);
     }
 
+    /// Get the expression. This may allocate it.
     pub fn get(&mut self, et: &mut ExprTree) -> ExprId {
         if let Some(v) = &self.value {
             v.clone()
         } else {
+            // Char is just dummy variant as it is one of the most inert
+            // expression types.
             let res = et.char();
             self.value = Some(res.clone());
             res

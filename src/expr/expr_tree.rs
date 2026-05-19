@@ -6,6 +6,9 @@ use std::{
 
 use crate::expr::{Expr, ExprId, expression::Expression, may_ref::MayRef};
 
+/// Automatic memory management for expression.
+/// 
+/// This is basically simple garbage collector.
 #[derive(Debug, Default)]
 pub struct ExprTree {
     exprs: Vec<Expression>,
@@ -13,20 +16,24 @@ pub struct ExprTree {
 }
 
 impl ExprTree {
+    /// Create empty expression tree.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Remove the given id from the expression tree.
     pub fn take_out(&mut self, id: ExprId) -> Expr {
         // TODO: optimize this to remove the clone in some cases
         self[&id].clone()
     }
 
+    /// Create make the referee reference another expression.
     pub fn reference(&mut self, referee: &ExprId, target: ExprId) {
         let target = self.resolve_opt(target);
         self.exprs[*referee.0].expr = MayRef::Ref(target);
     }
 
+    /// Insert new expression to the tree.
     pub fn insert(&mut self, expr: Expr) -> ExprId {
         self.reserve_1();
 
