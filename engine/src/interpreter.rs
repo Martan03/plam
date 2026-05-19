@@ -1,22 +1,23 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, io::BufRead, rc::Rc};
 
-use crate::{expr::Expr, i_tab::Id};
+use crate::{expr::Expr, i_tab::Id, lam_repr::StdinList};
 
 /// Interpreter capable of interpreting lambda code.
-pub struct Interpreter {
+pub struct Interpreter<R> {
     top: HashMap<Id, Rc<Expr>>,
+    stdin: StdinList<R>,
 }
 
-impl Interpreter {
+impl<R: BufRead> Interpreter<R> {
     /// Create new interpreter.
-    pub fn new(top: HashMap<Id, Rc<Expr>>) -> Self {
-        Self { top }
+    pub fn new(top: HashMap<Id, Rc<Expr>>, stdin: StdinList<R>) -> Self {
+        Self { top, stdin }
     }
 
     /// Evaluate the given expression. If `expand` is true it will be evaluated
     /// to the furthest expanded version even if it doesn't produce single
     /// value.
-    pub fn eval(&self, mut expr: Rc<Expr>, expand: bool) -> Rc<Expr> {
+    pub fn eval(&mut self, mut expr: Rc<Expr>, expand: bool) -> Rc<Expr> {
         loop {
             expr = match &*expr {
                 Expr::Ident(id) => {
@@ -33,6 +34,7 @@ impl Interpreter {
                         _ => return expr,
                     }
                 }
+                Expr::Stdin(n) => self.stdin.get(*n),
                 Expr::Lambda(_, _)
                 | Expr::Counter(_)
                 | Expr::Increment
@@ -49,7 +51,7 @@ impl Interpreter {
     }
 
     fn eval_apply(
-        &self,
+        &mut self,
         l: Rc<Expr>,
         r: Rc<Expr>,
     ) -> Result<Rc<Expr>, Rc<Expr>> {
@@ -71,7 +73,10 @@ impl Interpreter {
         body.clone()
     }
 
-    fn eval_apply_increment(&self, r: Rc<Expr>) -> Result<Rc<Expr>, Rc<Expr>> {
+    fn eval_apply_increment(
+        &mut self,
+        r: Rc<Expr>,
+    ) -> Result<Rc<Expr>, Rc<Expr>> {
         let r = self.eval(r, true);
         if let Expr::Counter(cnt) = &*r {
             Ok(Rc::new(Expr::Counter(*cnt + 1)))
@@ -80,7 +85,7 @@ impl Interpreter {
         }
     }
 
-    fn eval_apply_char(&self, r: Rc<Expr>) -> Result<Rc<Expr>, Rc<Expr>> {
+    fn eval_apply_char(&mut self, r: Rc<Expr>) -> Result<Rc<Expr>, Rc<Expr>> {
         let r = self.eval(r, true);
         if let Expr::Counter(cnt) = &*r {
             Ok(Rc::new(Expr::String(vec![*cnt as u8])))
@@ -90,7 +95,7 @@ impl Interpreter {
     }
 
     fn eval_apply_string(
-        &self,
+        &mut self,
         mut l: Rc<Expr>,
         r: Rc<Expr>,
     ) -> Result<Rc<Expr>, Rc<Expr>> {
@@ -120,6 +125,7 @@ impl Expr {
             }
             Expr::Lambda(i, expr) if *i == id => {}
             Expr::Counter(_)
+            | Expr::Stdin(_)
             | Expr::Increment
             | Expr::Char
             | Expr::String(_) => {}
@@ -128,6 +134,7 @@ impl Expr {
                 | Expr::Counter(_)
                 | Expr::Increment
                 | Expr::Char
+                | Expr::Stdin(_)
                 | Expr::String(_) => {
                     unreachable!()
                 }

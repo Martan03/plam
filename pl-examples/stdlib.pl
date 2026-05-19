@@ -1,6 +1,9 @@
+// Implementation of basic functions and data types.
+
 // Conversions to printable values.
 let cnum = \n.n $increment $counter
 let cbool = \b.b True False
+let chr = \n.$char (cnum n)
 
 // Basic boolean algebra.
 let true = \a b.a
@@ -67,7 +70,7 @@ let < = (Y \" n d.d \c d.c (" (+ d (* n +10))) n) +0
 let [] = ,3 false _ _
 let head = \l.l \_ h _.h
 let tail = \l.l \_ _ t.t
-let : = \i l.,3 true i l
+let : = ,3 true
 let [:] = \i.: i []
 let :: = Y \" a b.a \c h t.c (: h (" t b)) b
 let ' = true
@@ -79,6 +82,7 @@ let !! = Y \" i l.l \c h t.c (0? i h (" (-- i) t)) _
 let flip = \f a b.f b a
 let id = \x.x
 let nums = (Y \" n.: n (" (++ n))) +0
+let apply = \a b.a b
 
 // Operations on lists
 let foldl = Y \" f v l.l \c h t.c (" f (f v h) t) v
@@ -89,4 +93,4 @@ let map = \f.foldr (\x.: (f x)) []
 
 ;
 
-cnum (sum (take +5 (map (* +2) nums)))
+foldr apply (chr (< 2 0 >)) (map chr $stdin)

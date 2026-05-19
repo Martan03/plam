@@ -1,5 +1,9 @@
 use std::{
-    collections::HashMap, fs::File, io::BufReader, process::ExitCode, rc::Rc,
+    collections::HashMap,
+    fs::File,
+    io::{BufReader, StdinLock},
+    process::ExitCode,
+    rc::Rc,
 };
 
 use pareg::Pareg;
@@ -7,7 +11,14 @@ use termal::eprintacln;
 use utf8_chars::BufReadCharsExt;
 
 use crate::{
-    cli::Args, err::Result, expr::Expr, i_tab::ITab, interpreter::Interpreter,
+    cli::Args,
+    err::Result,
+    expr::Expr,
+    i_tab::{ITab, Id},
+    interpreter::Interpreter,
+    lam_repr::{
+        Bottom, First, Incr, List, PeanoChars, Second, StdinList, Triple, YComb,
+    },
     parser::parse,
 };
 
@@ -16,6 +27,7 @@ mod err;
 mod expr;
 mod i_tab;
 mod interpreter;
+mod lam_repr;
 mod parser;
 
 fn main() -> ExitCode {
@@ -44,6 +56,7 @@ fn start() -> Result<()> {
     defs.insert(itab.insert("$increment"), Rc::new(Expr::Increment));
     defs.insert(itab.insert("$counter"), Rc::new(Expr::Counter(0)));
     defs.insert(itab.insert("$char"), Rc::new(Expr::Char));
+    defs.insert(itab.insert("$stdin"), Rc::new(Expr::Stdin(0)));
 
     // Load the code
     for p in args.sources {
@@ -55,7 +68,7 @@ fn start() -> Result<()> {
     }
 
     // Interpret the code.
-    let int = Interpreter::new(defs);
+    let mut int = init_interpreter(defs, &mut itab);
     let mut buf = String::new();
     for expr in exprs {
         let val = int.eval(expr, args.expand);
@@ -65,4 +78,21 @@ fn start() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn init_interpreter(
+    defs: HashMap<Id, Rc<Expr>>,
+    itab: &mut ITab,
+) -> Interpreter<StdinLock<'static>> {
+    let y = YComb::new(itab);
+    let first = First::new(itab);
+    let triple = Triple::new(itab);
+    let second = Second::new(itab);
+    let incr = Incr::new(itab);
+    let bottom = Bottom::new(y, first.clone());
+    let list = List::new(triple, first, second.clone(), bottom.clone(), itab);
+    let pean_chars = PeanoChars::new(&incr, second);
+    let stdin = std::io::stdin().lock();
+    let stdin_list = StdinList::new(stdin, pean_chars, list, bottom);
+    Interpreter::new(defs, stdin_list)
 }

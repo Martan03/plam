@@ -71,8 +71,16 @@ information from a lambda expression.
   with `$counter` as argument. The counter value is the byte value of the char.
   Applying opaque string to opaque string will concatenate them. (e.g.
   `$char $counter ($char $counter)` will create string with two NUL bytes)
-
-In future plan to add builtin `$stdin` to allow reading from input.
+- `$stdin` stdin is list of bytes encoded as peano arithmetic. Precisely:
+    - the boolean `true` is defined as `\t f.t`,
+    - the boolean `false` is defined as `\t f.f`,
+    - the number `0` is defined as `\f x.x`,
+    - the successor of number **n** is defined as `\f x.n f (f x)`,
+    - the `Y` combinator is defined as `\f.f ((\x.f (x x)) \x.f (x x))`,
+    - bottom (`_`) is defined as `Y \" x."`,
+    - the empty list is defined as `\f.f false _ _`,
+    - and non empty list with head `h` and tail `t` is defined as
+      `\f.f true h t`.
 
 ## Example
 
