@@ -24,6 +24,13 @@ Version {v}
   {'y}-s  --source {'w}<file>{'_}
     Add new source. The source name may start with `-`.
 
+  {'y}-c  --cache-limit {'w}<limit>{'_}
+    Maximum number of apply expressions to cache. Set to 0 to disable the
+    cache. Default is 0. Note that this may not work for recursive code.
+
+  {'y}--unlimited-cache{'_}
+    Make the apply expression cache limited only by the system memory.
+
  “ {'i}Be strong, all you people of the land,’ declares the Lord,
    ‘and work. For I am with you,’ declares the Lord Almighty. {'_}”
                                                    {'w bold}✝ Haggai 2:4{'_}

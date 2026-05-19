@@ -1,5 +1,7 @@
 use std::{collections::HashMap, io::BufRead};
 
+use rand::RngExt;
+
 use crate::{
     expr::{Expr, ExprId, ExprTree},
     i_tab::Id,
@@ -11,6 +13,8 @@ pub struct Interpreter<'a, R> {
     pub et: &'a mut ExprTree,
     top: HashMap<Id, ExprId>,
     stdin: StdinList<R>,
+    pub cache_limit: usize,
+    apply_cache: HashMap<(ExprId, ExprId), ExprId>,
 }
 
 impl<'a, R: BufRead> Interpreter<'a, R> {
@@ -20,7 +24,13 @@ impl<'a, R: BufRead> Interpreter<'a, R> {
         top: HashMap<Id, ExprId>,
         stdin: StdinList<R>,
     ) -> Self {
-        Self { et, top, stdin }
+        Self {
+            et,
+            top,
+            stdin,
+            apply_cache: HashMap::new(),
+            cache_limit: 0,
+        }
     }
 
     /// Evaluate the given expression. If `expand` is true it will be evaluated
@@ -69,9 +79,22 @@ impl<'a, R: BufRead> Interpreter<'a, R> {
         self.eval(&l, true);
         match &self.et[&l] {
             Expr::Lambda(id, body) => {
+                let lr = (l.clone(), r.clone());
+                if self.cache_limit != 0
+                    && let Some(e) = self.apply_cache.get(&lr)
+                {
+                    self.et.reference(out, e.clone());
+                    return true;
+                }
                 let body = body.clone();
                 let id = *id;
                 self.et.replace(out, &body, id, &r);
+                if self.cache_limit != 0 {
+                    if self.apply_cache.len() >= self.cache_limit {
+                        self.free_cache();
+                    }
+                    self.apply_cache.insert(lr, out.clone());
+                }
                 true
             }
             Expr::Increment => {
@@ -114,6 +137,11 @@ impl<'a, R: BufRead> Interpreter<'a, R> {
 
     fn get(&self, id: Id) -> Option<ExprId> {
         self.top.get(&id).cloned()
+    }
+
+    fn free_cache(&mut self) {
+        let mut rng = rand::rng();
+        self.apply_cache.retain(|_, _| rng.random());
     }
 }
 

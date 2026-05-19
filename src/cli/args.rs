@@ -12,6 +12,8 @@ pub struct Args {
     /// Whether the lambda expression should be shown in its entierely expanded
     /// form.
     pub expand: bool,
+    /// Maximum size of apply cache.
+    pub cache_limit: usize,
 }
 
 impl Args {
@@ -28,6 +30,10 @@ impl Args {
                 "-h" | "-?" | "--help" => help(),
                 "-e" | "--expand" => self.expand = true,
                 "-s" | "--source" => self.sources.push(args.next_arg()?),
+                "-c" | "--cache-limit" => {
+                    self.cache_limit = args.next_arg()?
+                }
+                "--unlimited-cache" => self.cache_limit = usize::MAX,
                 a if a.starts_with('-') => {
                     return Err(args
                         .err_unknown_argument()
