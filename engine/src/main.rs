@@ -1,30 +1,12 @@
-use std::{
-    collections::HashMap,
-    fs::File,
-    io::BufReader,
-    io::{BufReader, StdinLock},
-    process::ExitCode,
-    rc::Rc,
-};
+use std::{collections::HashMap, fs::File, io::BufReader, process::ExitCode};
 
 use pareg::Pareg;
 use termal::eprintacln;
 use utf8_chars::BufReadCharsExt;
 
 use crate::{
-    cli::Args,
-    err::Result,
-    expr::Expr,
-    expr::{ExprId, ExprTree},
-    i_tab::ITab,
-    i_tab::{ITab, Id},
-    interpreter::Interpreter,
-    interpreter::init_interpreter,
-    lam_repr::{
-        Bottom, First, Incr, List, PeanoChars, Second, StdinList, Triple,
-        YComb,
-    },
-    parser::parse,
+    cli::Args, err::Result, expr::ExprTree, i_tab::ITab,
+    interpreter::init_interpreter, parser::parse,
 };
 
 mod cli;
