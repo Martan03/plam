@@ -7,6 +7,7 @@ edition = "2024"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+getrandom = { version = "0.4.2", features = ["wasm_js"] }
 pareg = "0.12.0"
 rand = "0.10.1"
 termal = "4.2.1"
