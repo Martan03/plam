@@ -73,9 +73,9 @@ fn start() -> Result<()> {
     int.cache_limit = args.cache_limit;
     let mut buf = String::new();
     for expr in exprs {
-        int.eval(&expr, args.expand);
+        int.eval(&expr);
         buf.clear();
-        int.et.to_string(&expr, &itab, &mut buf);
+        int.et.to_string(&expr, int.itab, &mut buf);
         println!("{buf}");
     }
 
@@ -85,7 +85,7 @@ fn start() -> Result<()> {
 fn init_interpreter<'a>(
     et: &'a mut ExprTree,
     defs: HashMap<Id, ExprId>,
-    itab: &mut ITab,
+    itab: &'a mut ITab,
 ) -> Interpreter<'a, StdinLock<'static>> {
     let y = YComb::new(et, itab);
     let first = First::new(et, itab);
@@ -98,5 +98,5 @@ fn init_interpreter<'a>(
     let pean_chars = PeanoChars::new(et, &incr, second);
     let stdin = std::io::stdin().lock();
     let stdin_list = StdinList::new(stdin, pean_chars, list, bottom);
-    Interpreter::new(et, defs, stdin_list)
+    Interpreter::new(et, defs, stdin_list, itab)
 }

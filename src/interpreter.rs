@@ -4,17 +4,20 @@ use rand::RngExt;
 
 use crate::{
     expr::{Expr, ExprId, ExprTree},
-    i_tab::Id,
+    i_tab::{ITab, Id},
     lam_repr::StdinList,
 };
 
 /// Interpreter capable of interpreting lambda code.
 pub struct Interpreter<'a, R> {
     pub et: &'a mut ExprTree,
+    pub itab: &'a ITab,
     top: HashMap<Id, ExprId>,
     stdin: StdinList<R>,
     pub cache_limit: usize,
     apply_cache: HashMap<(ExprId, ExprId), ExprId>,
+    view_buf: HashMap<ExprId, Option<LazyExpr>>,
+    base: Option<ExprId>,
 }
 
 impl<'a, R: BufRead> Interpreter<'a, R> {
@@ -23,22 +26,35 @@ impl<'a, R: BufRead> Interpreter<'a, R> {
         et: &'a mut ExprTree,
         top: HashMap<Id, ExprId>,
         stdin: StdinList<R>,
+        itab: &'a ITab,
     ) -> Self {
         Self {
             et,
+            itab,
             top,
             stdin,
             apply_cache: HashMap::new(),
             cache_limit: 0,
+            view_buf: HashMap::new(),
+            base: None,
         }
     }
 
     /// Evaluate the given expression. If `expand` is true it will be evaluated
     /// to the furthest expanded version even if it doesn't produce single
     /// value.
-    pub fn eval(&mut self, expr: &ExprId, expand: bool) {
+    pub fn eval(&mut self, expr: &ExprId) {
+        self.base = None; //Some(expr.clone());
+        self.eval_inner(expr);
+    }
+
+    fn eval_inner(&mut self, expr: &ExprId) {
         loop {
-            let orig = expand.then(|| self.et[expr].clone());
+            if let Some(b) = &self.base {
+                let mut s = String::new();
+                self.et.to_string(b, self.itab, &mut s);
+                println!("{s}");
+            }
             match &self.et[expr] {
                 Expr::Ident(id) => {
                     if let Some(e) = self.eval_ident(*id) {
@@ -49,9 +65,6 @@ impl<'a, R: BufRead> Interpreter<'a, R> {
                 }
                 Expr::Apply(l, r) => {
                     if !self.eval_apply(expr, l.clone(), r.clone()) {
-                        if let Some(o) = orig {
-                            self.et[expr] = o;
-                        }
                         return;
                     }
                 }
@@ -76,7 +89,7 @@ impl<'a, R: BufRead> Interpreter<'a, R> {
     }
 
     fn eval_apply(&mut self, out: &ExprId, l: ExprId, r: ExprId) -> bool {
-        self.eval(&l, true);
+        self.eval_inner(&l);
         match &self.et[&l] {
             Expr::Lambda(id, body) => {
                 let lr = (l.clone(), r.clone());
@@ -88,7 +101,7 @@ impl<'a, R: BufRead> Interpreter<'a, R> {
                 }
                 let body = body.clone();
                 let id = *id;
-                self.et.replace(out, &body, id, &r);
+                self.et.replace(out, &body, id, &r, &mut self.view_buf);
                 if self.cache_limit != 0 {
                     if self.apply_cache.len() >= self.cache_limit {
                         self.free_cache();
@@ -98,7 +111,7 @@ impl<'a, R: BufRead> Interpreter<'a, R> {
                 true
             }
             Expr::Increment => {
-                self.eval(&r, true);
+                self.eval_inner(&r);
                 if let Expr::Counter(cnt) = self.et[&r] {
                     self.et[out] = Expr::Counter(cnt + 1);
                     true
@@ -107,7 +120,7 @@ impl<'a, R: BufRead> Interpreter<'a, R> {
                 }
             }
             Expr::Char => {
-                self.eval(&r, true);
+                self.eval_inner(&r);
                 if let Expr::Counter(cnt) = self.et[&r] {
                     self.et[out] = Expr::String(vec![cnt as u8]);
                     true
@@ -116,7 +129,7 @@ impl<'a, R: BufRead> Interpreter<'a, R> {
                 }
             }
             Expr::String(_) => {
-                self.eval(&r, true);
+                self.eval_inner(&r);
                 if !matches!(self.et[&r], Expr::String(_)) {
                     return false;
                 }
@@ -152,16 +165,6 @@ pub enum ReplaceResult {
     New(Expr),
 }
 
-impl ReplaceResult {
-    pub fn get_expr(self, et: &mut ExprTree, expr: &ExprId) -> Option<ExprId> {
-        match self {
-            ReplaceResult::Body => None,
-            ReplaceResult::Expr => Some(expr.clone()),
-            ReplaceResult::New(expr) => Some(et.insert(expr)),
-        }
-    }
-}
-
 impl ExprTree {
     pub fn replace(
         &mut self,
@@ -169,12 +172,14 @@ impl ExprTree {
         body: &ExprId,
         id: Id,
         expr: &ExprId,
+        viewed: &mut HashMap<ExprId, Option<LazyExpr>>,
     ) {
-        match self.replace_inner(body, id, expr) {
+        match self.replace_inner(body, id, expr, viewed) {
             ReplaceResult::Body => self.reference(out, body.clone()),
             ReplaceResult::Expr => self.reference(out, expr.clone()),
             ReplaceResult::New(expr) => self[out] = expr,
         }
+        viewed.clear();
     }
 
     fn replace_inner(
@@ -182,6 +187,7 @@ impl ExprTree {
         body: &ExprId,
         id: Id,
         expr: &ExprId,
+        viewed: &mut HashMap<ExprId, Option<LazyExpr>>,
     ) -> ReplaceResult {
         match &self[body] {
             Expr::Ident(i) => {
@@ -197,9 +203,8 @@ impl ExprTree {
                     ReplaceResult::Body
                 } else {
                     let body = body.clone();
-                    if let Some(e) = self
-                        .replace_inner(&body, id, expr)
-                        .get_expr(self, expr)
+                    if let Some(e) =
+                        self.checked_replace(&body, id, expr, viewed)
                     {
                         ReplaceResult::New(Expr::Lambda(i, e))
                     } else {
@@ -210,8 +215,8 @@ impl ExprTree {
             Expr::Apply(l, r) => {
                 let le = l.clone();
                 let re = r.clone();
-                let l = self.replace_inner(&le, id, expr).get_expr(self, expr);
-                let r = self.replace_inner(&re, id, expr).get_expr(self, expr);
+                let l = self.checked_replace(&le, id, expr, viewed);
+                let r = self.checked_replace(&re, id, expr, viewed);
                 if l.is_none() && r.is_none() {
                     ReplaceResult::Body
                 } else {
@@ -225,6 +230,66 @@ impl ExprTree {
             | Expr::Increment
             | Expr::Char
             | Expr::String(_) => ReplaceResult::Body,
+        }
+    }
+
+    fn checked_replace(
+        &mut self,
+        body: &ExprId,
+        id: Id,
+        expr: &ExprId,
+        viewed: &mut HashMap<ExprId, Option<LazyExpr>>,
+    ) -> Option<ExprId> {
+        if let Some(res) = viewed.get_mut(body) {
+            return res.as_mut().map(|a| a.get(self));
+        }
+        viewed.insert(body.clone(), Some(LazyExpr::empty()));
+        let res = self.replace_inner(body, id, expr, viewed);
+        let res = match res {
+            ReplaceResult::Body => None,
+            ReplaceResult::Expr => {
+                viewed
+                    .get_mut(body)
+                    .unwrap()
+                    .as_mut()
+                    .unwrap()
+                    .set(expr.clone());
+                Some(expr.clone())
+            }
+            ReplaceResult::New(expr) => {
+                let d =
+                    viewed.get_mut(body).unwrap().as_mut().unwrap().get(self);
+                self[&d] = expr;
+                Some(d)
+            }
+        };
+        if res.is_none() {
+            viewed.insert(body.clone(), None);
+        }
+        res
+    }
+}
+
+pub struct LazyExpr {
+    value: Option<ExprId>,
+}
+
+impl LazyExpr {
+    pub fn empty() -> Self {
+        Self { value: None }
+    }
+
+    pub fn set(&mut self, expr: ExprId) {
+        self.value = Some(expr);
+    }
+
+    pub fn get(&mut self, et: &mut ExprTree) -> ExprId {
+        if let Some(v) = &self.value {
+            v.clone()
+        } else {
+            let res = et.char();
+            self.value = Some(res.clone());
+            res
         }
     }
 }
