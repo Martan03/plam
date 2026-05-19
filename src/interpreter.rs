@@ -34,7 +34,7 @@ impl<'a, R: BufRead> Interpreter<'a, R> {
             top,
             stdin,
             apply_cache: HashMap::new(),
-            cache_limit: 0,
+            cache_limit: 10000,
             view_buf: HashMap::new(),
             base: None,
         }
