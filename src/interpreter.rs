@@ -1,149 +1,202 @@
-use std::{collections::HashMap, io::BufRead, rc::Rc};
+use std::{collections::HashMap, io::BufRead};
 
-use crate::{expr::Expr, i_tab::Id, lam_repr::StdinList};
+use crate::{
+    expr::{Expr, ExprId, ExprTree},
+    i_tab::Id,
+    lam_repr::StdinList,
+};
 
 /// Interpreter capable of interpreting lambda code.
-pub struct Interpreter<R> {
-    top: HashMap<Id, Rc<Expr>>,
+pub struct Interpreter<'a, R> {
+    pub et: &'a mut ExprTree,
+    top: HashMap<Id, ExprId>,
     stdin: StdinList<R>,
 }
 
-impl<R: BufRead> Interpreter<R> {
+impl<'a, R: BufRead> Interpreter<'a, R> {
     /// Create new interpreter.
-    pub fn new(top: HashMap<Id, Rc<Expr>>, stdin: StdinList<R>) -> Self {
-        Self { top, stdin }
+    pub fn new(
+        et: &'a mut ExprTree,
+        top: HashMap<Id, ExprId>,
+        stdin: StdinList<R>,
+    ) -> Self {
+        Self { et, top, stdin }
     }
 
     /// Evaluate the given expression. If `expand` is true it will be evaluated
     /// to the furthest expanded version even if it doesn't produce single
     /// value.
-    pub fn eval(&mut self, mut expr: Rc<Expr>, expand: bool) -> Rc<Expr> {
+    pub fn eval(&mut self, expr: &ExprId, expand: bool) {
         loop {
-            expr = match &*expr {
+            let orig = expand.then(|| self.et[expr].clone());
+            match &self.et[expr] {
                 Expr::Ident(id) => {
                     if let Some(e) = self.eval_ident(*id) {
-                        e
+                        self.et.reference(expr, e);
                     } else {
-                        return expr;
+                        return;
                     }
                 }
                 Expr::Apply(l, r) => {
-                    match self.eval_apply(l.clone(), r.clone()) {
-                        Ok(r) => r,
-                        Err(e) if expand => return e,
-                        _ => return expr,
+                    if !self.eval_apply(expr, l.clone(), r.clone()) {
+                        if let Some(o) = orig {
+                            self.et[expr] = o;
+                        }
+                        return;
                     }
                 }
-                Expr::Stdin(n) => self.stdin.get(*n),
+                Expr::Stdin(n) => {
+                    let n = *n;
+                    let res = self.stdin.get(self.et, n);
+                    self.et.reference(expr, res);
+                }
                 Expr::Lambda(_, _)
                 | Expr::Counter(_)
                 | Expr::Increment
                 | Expr::Char
                 | Expr::String(_) => {
-                    return expr;
+                    return;
                 }
             };
         }
     }
 
-    fn eval_ident(&self, id: Id) -> Option<Rc<Expr>> {
+    fn eval_ident(&self, id: Id) -> Option<ExprId> {
         self.get(id)
     }
 
-    fn eval_apply(
-        &mut self,
-        l: Rc<Expr>,
-        r: Rc<Expr>,
-    ) -> Result<Rc<Expr>, Rc<Expr>> {
-        let l = self.eval(l, true);
-        match &*l {
-            Expr::Lambda(_, _) => Ok(self.eval_apply_lambda(l, r)),
-            Expr::Increment => self.eval_apply_increment(r),
-            Expr::Char => self.eval_apply_char(r),
-            Expr::String(_) => self.eval_apply_string(l, r),
-            _ => Err(Rc::new(Expr::Apply(l, r))),
+    fn eval_apply(&mut self, out: &ExprId, l: ExprId, r: ExprId) -> bool {
+        self.eval(&l, true);
+        match &self.et[&l] {
+            Expr::Lambda(id, body) => {
+                let body = body.clone();
+                let id = *id;
+                self.et.replace(out, &body, id, &r);
+                true
+            }
+            Expr::Increment => {
+                self.eval(&r, true);
+                if let Expr::Counter(cnt) = self.et[&r] {
+                    self.et[out] = Expr::Counter(cnt + 1);
+                    true
+                } else {
+                    false
+                }
+            }
+            Expr::Char => {
+                self.eval(&r, true);
+                if let Expr::Counter(cnt) = self.et[&r] {
+                    self.et[out] = Expr::String(vec![cnt as u8]);
+                    true
+                } else {
+                    false
+                }
+            }
+            Expr::String(_) => {
+                self.eval(&r, true);
+                if !matches!(self.et[&r], Expr::String(_)) {
+                    return false;
+                }
+                self.et[out] = Expr::Char;
+                let Expr::String(mut s) = self.et.take_out(l) else {
+                    unreachable!();
+                };
+                let Expr::String(r) = &self.et[&r] else {
+                    unreachable!();
+                };
+                s.extend_from_slice(r);
+                self.et[out] = Expr::String(s);
+                true
+            }
+            _ => false,
         }
     }
 
-    fn eval_apply_lambda(&self, mut l: Rc<Expr>, r: Rc<Expr>) -> Rc<Expr> {
-        let Expr::Lambda(id, body) = Rc::make_mut(&mut l) else {
-            panic!();
-        };
-        body.replace(*id, r);
-        body.clone()
-    }
-
-    fn eval_apply_increment(
-        &mut self,
-        r: Rc<Expr>,
-    ) -> Result<Rc<Expr>, Rc<Expr>> {
-        let r = self.eval(r, true);
-        if let Expr::Counter(cnt) = &*r {
-            Ok(Rc::new(Expr::Counter(*cnt + 1)))
-        } else {
-            Err(Rc::new(Expr::Apply(Rc::new(Expr::Increment), r)))
-        }
-    }
-
-    fn eval_apply_char(&mut self, r: Rc<Expr>) -> Result<Rc<Expr>, Rc<Expr>> {
-        let r = self.eval(r, true);
-        if let Expr::Counter(cnt) = &*r {
-            Ok(Rc::new(Expr::String(vec![*cnt as u8])))
-        } else {
-            Err(Rc::new(Expr::Apply(Rc::new(Expr::Char), r)))
-        }
-    }
-
-    fn eval_apply_string(
-        &mut self,
-        mut l: Rc<Expr>,
-        r: Rc<Expr>,
-    ) -> Result<Rc<Expr>, Rc<Expr>> {
-        let r = self.eval(r, true);
-        let Expr::String(r) = &*r else {
-            return Err(Rc::new(Expr::Apply(l, r)));
-        };
-        let Expr::String(v) = Rc::make_mut(&mut l) else {
-            panic!();
-        };
-        v.extend_from_slice(r);
-        Ok(l)
-    }
-
-    fn get(&self, id: Id) -> Option<Rc<Expr>> {
+    fn get(&self, id: Id) -> Option<ExprId> {
         self.top.get(&id).cloned()
     }
 }
 
-impl Expr {
-    pub fn replace(self: &mut Rc<Self>, id: Id, expr: Rc<Expr>) {
-        match &**self {
+#[derive(Debug)]
+pub enum ReplaceResult {
+    Body,
+    Expr,
+    New(Expr),
+}
+
+impl ReplaceResult {
+    pub fn get_expr(self, et: &mut ExprTree, expr: &ExprId) -> Option<ExprId> {
+        match self {
+            ReplaceResult::Body => None,
+            ReplaceResult::Expr => Some(expr.clone()),
+            ReplaceResult::New(expr) => Some(et.insert(expr)),
+        }
+    }
+}
+
+impl ExprTree {
+    pub fn replace(
+        &mut self,
+        out: &ExprId,
+        body: &ExprId,
+        id: Id,
+        expr: &ExprId,
+    ) {
+        match self.replace_inner(body, id, expr) {
+            ReplaceResult::Body => self.reference(out, body.clone()),
+            ReplaceResult::Expr => self.reference(out, expr.clone()),
+            ReplaceResult::New(expr) => self[out] = expr,
+        }
+    }
+
+    fn replace_inner(
+        &mut self,
+        body: &ExprId,
+        id: Id,
+        expr: &ExprId,
+    ) -> ReplaceResult {
+        match &self[body] {
             Expr::Ident(i) => {
                 if *i == id {
-                    *self = expr
+                    ReplaceResult::Expr
+                } else {
+                    ReplaceResult::Body
                 }
             }
-            Expr::Lambda(i, expr) if *i == id => {}
+            Expr::Lambda(i, body) => {
+                let i = *i;
+                if i == id {
+                    ReplaceResult::Body
+                } else {
+                    let body = body.clone();
+                    if let Some(e) = self
+                        .replace_inner(&body, id, expr)
+                        .get_expr(self, expr)
+                    {
+                        ReplaceResult::New(Expr::Lambda(i, e))
+                    } else {
+                        ReplaceResult::Body
+                    }
+                }
+            }
+            Expr::Apply(l, r) => {
+                let le = l.clone();
+                let re = r.clone();
+                let l = self.replace_inner(&le, id, expr).get_expr(self, expr);
+                let r = self.replace_inner(&re, id, expr).get_expr(self, expr);
+                if l.is_none() && r.is_none() {
+                    ReplaceResult::Body
+                } else {
+                    let l = l.unwrap_or(le);
+                    let r = r.unwrap_or(re);
+                    ReplaceResult::New(Expr::Apply(l, r))
+                }
+            }
             Expr::Counter(_)
             | Expr::Stdin(_)
             | Expr::Increment
             | Expr::Char
-            | Expr::String(_) => {}
-            _ => match Rc::make_mut(self) {
-                Expr::Ident(_)
-                | Expr::Counter(_)
-                | Expr::Increment
-                | Expr::Char
-                | Expr::Stdin(_)
-                | Expr::String(_) => {
-                    unreachable!()
-                }
-                Expr::Apply(l, r) => {
-                    l.replace(id, expr.clone());
-                    r.replace(id, expr);
-                }
-                Expr::Lambda(_, e) => e.replace(id, expr),
-            },
+            | Expr::String(_) => ReplaceResult::Body,
         }
     }
 }

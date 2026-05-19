@@ -1,10 +1,10 @@
-use std::{collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
 use thiserror::Error;
 
 use crate::{
     err::Result,
-    expr::Expr,
+    expr::{ExprId, ExprTree},
     i_tab::{ITab, Id},
     parser::{file_pos::FilePos, lexer::Lexer, token::Token},
 };
@@ -34,11 +34,12 @@ pub struct ParseError {
 /// definitions and identifier table.
 pub fn parse<I: Iterator<Item = Result<char>>>(
     itab: &mut ITab,
+    et: &mut ExprTree,
     input: I,
-    defs: &mut HashMap<Id, Rc<Expr>>,
-) -> Result<Vec<Rc<Expr>>> {
+    defs: &mut HashMap<Id, ExprId>,
+) -> Result<Vec<ExprId>> {
     itab.reset_scopes();
-    let mut parser = Parser::new(itab, Lexer::new(input), defs);
+    let mut parser = Parser::new(itab, et, Lexer::new(input), defs);
     let res = parser.parse();
     parser.itab.reset_scopes();
     res?;
@@ -48,8 +49,9 @@ pub fn parse<I: Iterator<Item = Result<char>>>(
 #[derive(Debug)]
 struct Parser<'a, I> {
     pub itab: &'a mut ITab,
-    pub defs: &'a mut HashMap<Id, Rc<Expr>>,
-    pub exprs: Vec<Rc<Expr>>,
+    pub et: &'a mut ExprTree,
+    pub defs: &'a mut HashMap<Id, ExprId>,
+    pub exprs: Vec<ExprId>,
     lexer: Lexer<I>,
     cur: Token,
 }
@@ -58,11 +60,13 @@ impl<'a, I: Iterator<Item = Result<char>>> Parser<'a, I> {
     /// Create new parser.
     pub fn new(
         itab: &'a mut ITab,
+        et: &'a mut ExprTree,
         lexer: Lexer<I>,
-        defs: &'a mut HashMap<Id, Rc<Expr>>,
+        defs: &'a mut HashMap<Id, ExprId>,
     ) -> Self {
         Self {
             itab,
+            et,
             defs,
             exprs: vec![],
             lexer,
@@ -85,7 +89,7 @@ impl<'a, I: Iterator<Item = Result<char>>> Parser<'a, I> {
             Token::Let => self.read_let()?,
             _ => {
                 let expr = self.read_expr()?;
-                self.exprs.push(expr.into());
+                self.exprs.push(expr);
             }
         }
         Ok(())
@@ -102,32 +106,35 @@ impl<'a, I: Iterator<Item = Result<char>>> Parser<'a, I> {
         let expr = self.read_expr()?;
 
         let id = self.itab.insert(&name);
-        self.defs.insert(id, expr.into());
+        self.defs.insert(id, expr);
 
         Ok(())
     }
 
-    fn read_expr(&mut self) -> Result<Expr> {
+    fn read_expr(&mut self) -> Result<ExprId> {
         let mut res = self.read_item()?;
         while !matches!(
             self.cur,
             Token::Let | Token::Eof | Token::Right | Token::Semicol
         ) {
-            res = Expr::Apply(res.into(), self.read_item()?.into());
+            let itm = self.read_item()?;
+            res = self.et.apply(res, itm);
         }
         Ok(res)
     }
 
-    fn read_item(&mut self) -> Result<Expr> {
+    fn read_item(&mut self) -> Result<ExprId> {
         match self.cur {
             Token::Lambda => self.read_lambda(),
             Token::Left => self.read_bracket(),
-            Token::Ident => self.read_existing_ident().map(Expr::Ident),
+            Token::Ident => {
+                self.read_existing_ident().map(|i| self.et.ident(i))
+            }
             _ => Err(self.err_unexpected_token().into()),
         }
     }
 
-    fn read_lambda(&mut self) -> Result<Expr> {
+    fn read_lambda(&mut self) -> Result<ExprId> {
         self.next()?;
         self.itab.push_scope();
 
@@ -144,12 +151,12 @@ impl<'a, I: Iterator<Item = Result<char>>> Parser<'a, I> {
         self.itab.pop_scope();
 
         for i in idents.into_iter().rev() {
-            res = Expr::Lambda(i, res.into());
+            res = self.et.lambda(i, res);
         }
         Ok(res)
     }
 
-    fn read_bracket(&mut self) -> Result<Expr> {
+    fn read_bracket(&mut self) -> Result<ExprId> {
         self.next()?;
         let res = self.read_expr()?;
         self.skip(Token::Right)?;

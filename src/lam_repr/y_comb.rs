@@ -1,32 +1,33 @@
-use std::rc::Rc;
-
-use crate::{expr::Expr, i_tab::ITab};
+use crate::{
+    expr::{ExprId, ExprTree},
+    i_tab::ITab,
+};
 
 /// \f.f ((\x.f (x x)) \x.f (x x))
-pub struct YComb(Rc<Expr>);
+pub struct YComb(ExprId);
 
 impl YComb {
     /// Create new Y combinator.
-    pub fn new(itab: &mut ITab) -> Self {
+    pub fn new(et: &mut ExprTree, itab: &mut ITab) -> Self {
         itab.push_scope();
         let f = itab.insert("f");
         let x = itab.insert("x");
         itab.pop_scope();
 
-        let xe = Rc::new(Expr::Ident(x));
-        let fe = Rc::new(Expr::Ident(f));
+        let xe = et.ident(x);
+        let fe = et.ident(f);
 
-        let xx = Expr::Apply(xe.clone(), xe).into(); // x x
-        let fxx = Expr::Apply(fe.clone(), xx).into(); // f (x x)
-        let dup = Rc::new(Expr::Lambda(x, fxx)); // \x.f (x x)
-        let dup = Expr::Apply(dup.clone(), dup).into(); // (\x.f (x x)) \x.f (x x)
-        let body = Expr::Apply(fe, dup).into(); // f ((\x.f (x x)) \x.f (x x))
-        let lambda = Expr::Lambda(f, body);
-        Self(lambda.into())
+        let xx = et.apply(xe.clone(), xe); // x x
+        let fxx = et.apply(fe.clone(), xx); // f (x x)
+        let dup = et.lambda(x, fxx); // \x.f (x x)
+        let dup = et.apply(dup.clone(), dup); // (\x.f (x x)) \x.f (x x)
+        let body = et.apply(fe, dup); // f ((\x.f (x x)) \x.f (x x))
+        let lambda = et.lambda(f, body);
+        Self(lambda)
     }
 }
 
-impl From<YComb> for Rc<Expr> {
+impl From<YComb> for ExprId {
     fn from(value: YComb) -> Self {
         value.0
     }

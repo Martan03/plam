@@ -1,10 +1,10 @@
-use std::{io::BufRead, rc::Rc};
+use std::io::BufRead;
 
 use termal::eprintacln;
 
 use crate::{
     err::Result,
-    expr::Expr,
+    expr::{ExprId, ExprTree},
     lam_repr::{Bottom, List, PeanoChars},
 };
 
@@ -36,15 +36,17 @@ impl<R: BufRead> StdinList<R> {
     }
 
     /// Get character from stdin at the given position.
-    pub fn get(&mut self, pos: usize) -> Rc<Expr> {
+    pub fn get(&mut self, et: &mut ExprTree, pos: usize) -> ExprId {
         if let Err(e) = self.read_enough(pos) {
             eprintacln!("{'m}warning: {'_}stdin read failed: {e}");
-            self.list.push_to(self.bottom.clone(), self.list.empty())
+            self.list
+                .push_to(et, self.bottom.clone(), self.list.empty())
         } else if self.data.len() <= pos {
             self.list.empty()
         } else {
             let chr = self.chars.get(self.data[pos]);
-            self.list.push_to(chr, Expr::Stdin(pos + 1))
+            let ns = et.stdin(pos + 1);
+            self.list.push_to(et, chr, ns)
         }
     }
 

@@ -1,6 +1,13 @@
-use std::{fmt::Write, rc::Rc};
+use std::fmt::Write;
 
 use crate::i_tab::{ITab, Id};
+
+mod expr_id;
+mod expr_tree;
+mod expression;
+mod may_ref;
+
+pub use self::{expr_id::*, expr_tree::*};
 
 /// Expressions that can occur in interpreted lambda calculus.
 #[derive(Debug, Clone)]
@@ -8,9 +15,9 @@ pub enum Expr {
     /// Identifier.
     Ident(Id),
     /// Application of expression to argument.
-    Apply(Rc<Expr>, Rc<Expr>),
+    Apply(ExprId, ExprId),
     /// Definition of lambda function.
-    Lambda(Id, Rc<Expr>),
+    Lambda(Id, ExprId),
     // Special builtins for better output.
     /// Internal counter type.
     Counter(usize),
@@ -32,48 +39,88 @@ enum LastType {
     ApplyRight,
 }
 
-impl Expr {
-    /// Create lambda with multiple arguments.
-    pub fn lambda<I: DoubleEndedIterator<Item = Id>>(
-        ids: impl IntoIterator<Item = Id, IntoIter = I>,
-        body: impl Into<Rc<Expr>>,
-    ) -> Rc<Expr> {
-        let mut res = body.into();
-        for id in ids.into_iter().rev() {
-            res = Expr::Lambda(id, res).into();
+impl ExprTree {
+    pub fn ident(&mut self, id: Id) -> ExprId {
+        self.insert(Expr::Ident(id))
+    }
+
+    pub fn apply(
+        &mut self,
+        left: impl Into<ExprId>,
+        right: impl Into<ExprId>,
+    ) -> ExprId {
+        self.insert(Expr::Apply(left.into(), right.into()))
+    }
+
+    pub fn lambda(&mut self, id: Id, body: impl Into<ExprId>) -> ExprId {
+        self.insert(Expr::Lambda(id, body.into()))
+    }
+
+    pub fn counter(&mut self, cnt: usize) -> ExprId {
+        self.insert(Expr::Counter(cnt))
+    }
+
+    pub fn increment(&mut self) -> ExprId {
+        self.insert(Expr::Increment)
+    }
+
+    pub fn char(&mut self) -> ExprId {
+        self.insert(Expr::Char)
+    }
+
+    pub fn stdin(&mut self, pos: usize) -> ExprId {
+        self.insert(Expr::Stdin(pos))
+    }
+
+    /// Apply multiple arguments to an expression.
+    pub fn apply_many<E: Into<ExprId>>(
+        &mut self,
+        left: impl Into<ExprId>,
+        right: impl IntoIterator<Item = E>,
+    ) -> ExprId {
+        let mut res = left.into();
+        for r in right {
+            res = self.apply(res, r);
         }
         res
     }
 
-    /// Apply multiple arguments to an expression.
-    pub fn apply<E: Into<Rc<Expr>>>(
-        left: impl Into<Rc<Expr>>,
-        right: impl IntoIterator<Item = E>,
-    ) -> Rc<Expr> {
-        let mut res = left.into();
-        for r in right {
-            res = Expr::Apply(res, r.into()).into();
+    /// Create lambda with multiple arguments.
+    pub fn lambda_many<I: DoubleEndedIterator<Item = Id>>(
+        &mut self,
+        ids: impl IntoIterator<Item = Id, IntoIter = I>,
+        body: impl Into<ExprId>,
+    ) -> ExprId {
+        let mut res = body.into();
+        for id in ids.into_iter().rev() {
+            res = self.lambda(id, res);
         }
         res
     }
 
     /// Format the expression into a valid lambda calculus string when given
     /// table of identifiers.
-    pub fn to_string(&self, itab: &ITab, res: &mut String) {
-        self.to_string_inner(itab, res, LastType::Root);
+    pub fn to_string(&self, expr: &ExprId, itab: &ITab, res: &mut String) {
+        self.to_string_inner(expr, itab, res, LastType::Root);
     }
 
-    fn to_string_inner(&self, itab: &ITab, res: &mut String, last: LastType) {
-        match self {
+    fn to_string_inner(
+        &self,
+        expr: &ExprId,
+        itab: &ITab,
+        res: &mut String,
+        last: LastType,
+    ) {
+        match &self[expr] {
             Expr::Ident(id) => *res += &itab.name_of(*id),
             Expr::Apply(l, r) => {
                 let brackets = last == LastType::ApplyRight;
                 if brackets {
                     res.push('(');
                 }
-                l.to_string_inner(itab, res, LastType::ApplyLeft);
+                self.to_string_inner(l, itab, res, LastType::ApplyLeft);
                 res.push(' ');
-                r.to_string_inner(itab, res, LastType::ApplyRight);
+                self.to_string_inner(r, itab, res, LastType::ApplyRight);
                 if brackets {
                     res.push(')');
                 }
@@ -87,7 +134,7 @@ impl Expr {
                 res.push('\\');
                 *res += &itab.name_of(*id);
                 res.push('.');
-                expr.to_string_inner(itab, res, LastType::Lambda);
+                self.to_string_inner(expr, itab, res, LastType::Lambda);
                 if brackets {
                     res.push(')');
                 }
