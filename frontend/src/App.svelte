@@ -12,11 +12,13 @@
     import { settings } from "./lib/state/settings.svelte.js";
 
     let outputValue = $state("System ready. Click 'Run' to evaluate.");
+    let stdinValue = $state("");
     let isWasmLoaded = $state(false);
 
     const workspace = createWorkspace(initialCode);
     const isMenuVisible = persisted("plam-menu-visible", true);
 
+    let terminal: ReturnType<typeof Terminal>;
     let resetDialog: ReturnType<typeof ConfirmDialog>;
 
     onMount(async () => {
@@ -30,8 +32,9 @@
 
     function runEvaluation() {
         if (!isWasmLoaded) return;
+        terminal?.showOutput();
         try {
-            outputValue = eval_lambda(workspace.currentCode);
+            outputValue = eval_lambda(workspace.currentCode, stdinValue);
         } catch (e) {
             outputValue = `Error: ${e}`;
         }
@@ -70,7 +73,11 @@
 
         <div class="editor">
             <Editor bind:code={workspace.currentCode} />
-            <Terminal output={outputValue} />
+            <Terminal
+                bind:this={terminal}
+                output={outputValue}
+                bind:input={stdinValue}
+            />
         </div>
     </div>
 </main>

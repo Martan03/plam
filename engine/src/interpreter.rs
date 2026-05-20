@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    io::{BufRead, StdinLock},
-};
+use std::{collections::HashMap, io::BufRead};
 
 use crate::{
     expr::{Expr, ExprId, ExprTree},
@@ -26,11 +23,12 @@ pub struct Interpreter<'a, R> {
     base: Option<ExprId>,
 }
 
-pub fn init_interpreter<'a>(
+pub fn init_interpreter<'a, R: BufRead>(
     et: &'a mut ExprTree,
     defs: HashMap<Id, ExprId>,
     itab: &'a mut ITab,
-) -> Interpreter<'a, StdinLock<'static>> {
+    stdin: R,
+) -> Interpreter<'a, R> {
     let y = YComb::new(et, itab);
     let first = First::new(et, itab);
     let triple = Triple::new(et, itab);
@@ -40,7 +38,6 @@ pub fn init_interpreter<'a>(
     let list =
         List::new(et, triple, first, second.clone(), bottom.clone(), itab);
     let pean_chars = PeanoChars::new(et, &incr, second);
-    let stdin = std::io::stdin().lock();
     let stdin_list = StdinList::new(stdin, pean_chars, list, bottom);
     Interpreter::new(et, defs, stdin_list, itab)
 }

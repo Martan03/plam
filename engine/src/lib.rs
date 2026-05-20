@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, io::Cursor};
 
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -15,7 +15,7 @@ mod lam_repr;
 mod parser;
 
 #[wasm_bindgen]
-pub fn eval_lambda(input: &str) -> Result<String> {
+pub fn eval_lambda(input: &str, stdin: &str) -> Result<String> {
     // Prepare data containers
     let mut itab = ITab::new();
     let mut defs = HashMap::new();
@@ -32,7 +32,8 @@ pub fn eval_lambda(input: &str) -> Result<String> {
     exprs.extend(e);
 
     // Interpret the code.
-    let mut int = init_interpreter(&mut et, defs, &mut itab);
+    let reader = Cursor::new(stdin.to_string());
+    let mut int = init_interpreter(&mut et, defs, &mut itab, reader);
     let mut buf = String::new();
 
     let mut res = String::new();

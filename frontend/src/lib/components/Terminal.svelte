@@ -1,11 +1,13 @@
 <script lang="ts">
     import { persisted } from "../state/storage.svelte";
 
-    let { output = $bindable() } = $props();
+    let { output = $bindable(), input = $bindable("") } = $props();
 
     const termHeight = persisted("plam-term-height", 200);
     let isMaximized = $state(false);
     let isDragging = $state(false);
+
+    let activeTab = $state<"output" | "stdin">("output");
 
     const toggleMaximized = () => (isMaximized = !isMaximized);
 
@@ -25,6 +27,8 @@
     }
 
     const onPointerUp = () => (isDragging = false);
+
+    export const showOutput = () => (activeTab = "output");
 </script>
 
 <svelte:window onpointermove={onPointerMove} onpointerup={onPointerUp} />
@@ -42,14 +46,32 @@
     ></button>
 
     <div class="terminal-header">
-        <span>Program output</span>
+        <div class="tabs">
+            <button
+                class:active={activeTab === "output"}
+                onclick={() => (activeTab = "output")}>Output</button
+            >
+            <button
+                class:active={activeTab === "stdin"}
+                onclick={() => (activeTab = "stdin")}>Input</button
+            >
+        </div>
 
         <button class="icon-btn" onclick={toggleMaximized}>
             {isMaximized ? "🗗" : "🗖"}
         </button>
     </div>
 
-    <div class="terminal-content">{output}</div>
+    <div class="terminal-content">
+        {#if activeTab === "output"}
+            <div class="output-view">
+                {output}
+            </div>
+        {:else}
+            <textarea bind:value={input} placeholder="Enter standard input here"
+            ></textarea>
+        {/if}
+    </div>
 </div>
 
 <style>
@@ -105,6 +127,37 @@
         user-select: none;
     }
 
+    .tabs {
+        display: flex;
+        height: 100%;
+    }
+
+    .tabs button {
+        background: transparent;
+        border: none;
+        color: #5c6370;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.85rem;
+        padding: 0 1rem;
+        height: 100%;
+        border-top: 2px solid transparent;
+        transition:
+            color 0.1s,
+            background-color 0.1s;
+    }
+
+    .tabs button:hover {
+        background-color: #282c34;
+        color: #abb2bf;
+    }
+
+    .tabs button.active {
+        color: #ffffff;
+        background-color: #1e2227;
+        border-top: 2px solid var(--theme-primary, #3acbaf);
+    }
+
     .icon-btn {
         background: transparent;
         border: none;
@@ -115,10 +168,30 @@
 
     .terminal-content {
         flex: 1;
-        padding: 0.5rem 1rem;
-        overflow-y: auto;
+        flex-direction: column;
         font-family: monospace;
         font-size: 0.9rem;
+        overflow: hidden;
+    }
+
+    .output-view {
+        flex: 1;
+        padding: 0.5rem 1rem;
+        overflow-y: auto;
         white-space: pre-wrap;
+    }
+
+    .terminal-content textarea {
+        flex: 1;
+        width: 100%;
+        height: 100%;
+        background: inherit;
+        border: none;
+        color: inherit;
+        padding: 0.5rem 1rem;
+        font-size: inherit;
+        font-family: inherit;
+        resize: none;
+        outline: none;
     }
 </style>

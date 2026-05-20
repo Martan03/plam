@@ -56,7 +56,8 @@ fn start() -> Result<()> {
     }
 
     // Interpret the code.
-    let mut int = init_interpreter(&mut et, defs, &mut itab);
+    let stdin = std::io::stdin().lock();
+    let mut int = init_interpreter(&mut et, defs, &mut itab, stdin);
     int.cache_limit = args.cache_limit;
     let mut buf = String::new();
     for expr in exprs {
