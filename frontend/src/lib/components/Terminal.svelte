@@ -1,5 +1,7 @@
 <script lang="ts">
     import { persisted } from "../state/storage.svelte";
+    import MaximizeIcon from "./icons/MaximizeIcon.svelte";
+    import MinimizeIcon from "./icons/MinimizeIcon.svelte";
 
     let { output = $bindable(), input = $bindable("") } = $props();
 
@@ -58,7 +60,11 @@
         </div>
 
         <button class="icon-btn" onclick={toggleMaximized}>
-            {isMaximized ? "🗗" : "🗖"}
+            {#if isMaximized}
+                <MinimizeIcon width="0.8rem" />
+            {:else}
+                <MaximizeIcon width="0.8rem" />
+            {/if}
         </button>
     </div>
 
@@ -155,7 +161,7 @@
     .tabs button.active {
         color: #ffffff;
         background-color: #1e2227;
-        border-top: 2px solid var(--theme-primary, #3acbaf);
+        border-top: 2px solid var(--primary, #3acbaf);
     }
 
     .icon-btn {

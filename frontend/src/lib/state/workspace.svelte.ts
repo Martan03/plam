@@ -60,6 +60,25 @@ export function createWorkspace(initCode: string) {
         },
 
         /**
+         * Renames a file and updates the active pointer if needed.
+         * @param oldName - filename of the file to be renamed
+         * @param newName - new filename
+         * @returns {boolean} true on success, else false
+         */
+        rename(oldName: string, newName: string): boolean {
+            if (!files[oldName] || files[newName]) return false;
+
+            files[newName] = files[oldName];
+            delete files[oldName];
+
+            if (active === oldName) {
+                active = newName;
+            }
+            save();
+            return true;
+        },
+
+        /**
          * Removes the given file. Removes only when not the last file.
          * @param filename - filename of the file to be removed.
          * @returns {boolean} - true when removed succesfully, otherwise false.

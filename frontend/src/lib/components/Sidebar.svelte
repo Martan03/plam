@@ -1,7 +1,11 @@
 <script lang="ts">
     import { persisted } from "../state/storage.svelte";
+    import ContextMenu from "./ContextMenu.svelte";
     import ConfirmDialog from "./dialogs/ConfirmDialog.svelte";
     import PromptDialog from "./dialogs/PromptDialog.svelte";
+    import EditIcon from "./icons/EditIcon.svelte";
+    import SettingsIcon from "./icons/SettingsIcon.svelte";
+    import TrashIcon from "./icons/TrashIcon.svelte";
     import SettingsDialog from "./SettingsDialog.svelte";
 
     let { workspace, isVisible = $bindable(true) } = $props();
@@ -11,23 +15,28 @@
 
     let deleteDialog: ReturnType<typeof ConfirmDialog>;
     let newDialog: ReturnType<typeof PromptDialog>;
+    let renameDialog: ReturnType<typeof PromptDialog>;
     let settingsDialog: ReturnType<typeof SettingsDialog>;
+    let contextMenu: ReturnType<typeof ContextMenu>;
 
-    let fileToDelete = $state<string | null>(null);
+    let actionFile = $state<string | null>(null);
 
-    function promptNew() {
-        newDialog.show();
+    function openContextMenu(e: MouseEvent, file: string) {
+        actionFile = file;
+        contextMenu.open(e);
     }
 
-    function promptDelete(file: string) {
-        fileToDelete = file;
-        deleteDialog.show();
+    function execRename(filename: string) {
+        if (actionFile) {
+            workspace.rename(actionFile, filename);
+            actionFile = null;
+        }
     }
 
     function execDelete() {
-        if (fileToDelete) {
-            workspace.remove(fileToDelete);
-            fileToDelete = null;
+        if (actionFile) {
+            workspace.remove(actionFile);
+            actionFile = null;
         }
     }
 
@@ -60,24 +69,23 @@
 
     <div class="header">
         <span>Files</span>
-        <button class="add-btn" onclick={promptNew} title="New File">+</button>
+        <button
+            class="add-btn"
+            onclick={() => newDialog.show()}
+            title="New File">+</button
+        >
     </div>
 
     <ul class="file-list">
         {#each workspace.files as file}
-            <li class="file-item" class:active={workspace.active === file}>
+            <li
+                class="file-item"
+                class:active={workspace.active === file}
+                oncontextmenu={(e) => openContextMenu(e, file)}
+            >
                 <button class="sel-btn" onclick={() => workspace.select(file)}>
                     <span class="filename">{file}</span>
                 </button>
-
-                {#if workspace.files.length > 1}
-                    <button
-                        class="delete-btn"
-                        onclick={() => promptDelete(file)}
-                    >
-                        ×
-                    </button>
-                {/if}
             </li>
         {/each}
     </ul>
@@ -88,7 +96,7 @@
             title="Open Settings"
             onclick={() => settingsDialog.show()}
         >
-            <span class="icon">⚙</span> Settings
+            <SettingsIcon width="1.1rem" /> Settings
         </button>
     </div>
 </aside>
@@ -96,7 +104,7 @@
 <ConfirmDialog
     bind:this={deleteDialog}
     title="Delete file?"
-    message="This will delete '{fileToDelete}'. This action cannot be undone."
+    message="This will delete '{actionFile}'. This action cannot be undone."
     confirm="Delete"
     onconfirm={execDelete}
 />
@@ -108,6 +116,23 @@
     confirm="Create"
     onsubmit={(filename: string) => workspace.add(filename)}
 />
+
+<PromptDialog
+    bind:this={renameDialog}
+    title="Rename the file"
+    label="Filename:"
+    confirm="Rename"
+    onsubmit={execRename}
+/>
+
+<ContextMenu bind:this={contextMenu}>
+    <button onclick={() => renameDialog.show()}><EditIcon /> Rename</button>
+    {#if workspace.files.length > 1}
+        <button class="danger" onclick={() => deleteDialog.show()}>
+            <TrashIcon /> Delete
+        </button>
+    {/if}
+</ContextMenu>
 
 <SettingsDialog bind:this={settingsDialog} />
 
@@ -225,24 +250,6 @@
         text-overflow: ellipsis;
     }
 
-    .delete-btn {
-        background: transparent;
-        border: none;
-        color: #e06c75;
-        cursor: pointer;
-        font-size: 1.2rem;
-        opacity: 0;
-        padding: 0 4px;
-    }
-
-    .file-item:hover .delete-btn {
-        opacity: 1;
-    }
-
-    .delete-btn:hover {
-        font-weight: bold;
-    }
-
     .footer {
         padding: 0.5rem 0;
         border-top: 1px solid #181a1f;
@@ -258,12 +265,7 @@
         font-size: 0.9rem;
         color: inherit;
         cursor: pointer;
-    }
-
-    .settings-btn .icon {
-        margin-right: 0.7rem;
-        font-size: 1.1rem;
-        padding-bottom: 2px;
+        gap: 0.5rem;
     }
 
     .settings-btn:hover {

@@ -10,6 +10,7 @@
     import ConfirmDialog from "./lib/components/dialogs/ConfirmDialog.svelte";
     import { persisted } from "./lib/state/storage.svelte.js";
     import { settings } from "./lib/state/settings.svelte.js";
+    import MenuIcon from "./lib/components/icons/MenuIcon.svelte";
 
     let outputValue = $state("System ready. Click 'Run' to evaluate.");
     let stdinValue = $state("");
@@ -56,8 +57,9 @@
                 class="toggle-menu"
                 title="{isMenuVisible.value ? 'Hide' : 'Show'} menu"
                 onclick={() => (isMenuVisible.value = !isMenuVisible.value)}
-                >☰</button
             >
+                <MenuIcon width="1em" />
+            </button>
             <h1>plam</h1>
         </div>
         <div class="controls">
@@ -186,7 +188,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding-bottom: 0.17rem;
         outline: none;
     }
 
