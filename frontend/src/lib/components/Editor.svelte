@@ -1,7 +1,7 @@
 <script lang="ts">
     import { oneDark } from "@codemirror/theme-one-dark";
     import { basicSetup, EditorView } from "codemirror";
-    import { editorSyntax } from "../highlighter";
+    import { editorSyntax, editorTheme } from "../highlighter";
     import { Compartment } from "@codemirror/state";
     import { settings } from "../state/settings.svelte";
     import { vim } from "@replit/codemirror-vim";
@@ -16,7 +16,8 @@
             doc: code,
             extensions: [
                 basicSetup,
-                oneDark,
+                // oneDark,
+                editorTheme,
                 editorSyntax,
                 vimCompartment.of(settings.vimMode ? vim() : []),
                 EditorView.updateListener.of((update) => {

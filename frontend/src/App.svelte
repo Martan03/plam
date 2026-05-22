@@ -30,6 +30,7 @@
 
     $effect(() => {
         document.body.style.setProperty("--primary", settings.primaryColor);
+        document.documentElement.setAttribute("data-theme", settings.theme);
     });
 
     function runEvaluation() {
@@ -97,8 +98,8 @@
         flex-direction: column;
         height: 100vh;
         width: 100vw;
-        background-color: #282c34;
-        color: #abb2bf;
+        background-color: var(--bg);
+        color: var(--fg);
         font-family: sans-serif;
         text-align: left;
     }
@@ -122,8 +123,8 @@
         align-items: center;
         padding: 0.75rem 1.5rem;
         padding-left: 0.5rem;
-        background-color: #21252b;
-        border-bottom: 1px solid #181a1f;
+        background-color: var(--bg-panel);
+        border-bottom: 1px solid var(--border);
     }
 
     .toolbar h1 {
@@ -141,8 +142,8 @@
 
     .toolbar .controls button {
         padding: 0.5rem 1.5rem;
-        background: var(--primary, #3acbaf);
-        color: #282c34;
+        background: var(--primary);
+        color: var(--bg);
         border: 1px solid transparent;
         border-radius: 4px;
         font-weight: bold;
@@ -152,28 +153,28 @@
 
     .toolbar .controls button.secondary {
         background: transparent;
-        color: #abb2bf;
-        border: 1px solid #4b5263;
+        color: var(--fg);
+        border: 1px solid var(--border-light);
     }
 
     .toolbar .controls button:hover {
-        background: color-mix(in srgb, var(--primary, #3acbaf), black 20%);
+        background: color-mix(in srgb, var(--primary), var(--hover-dim) 20%);
     }
 
     .toolbar .controls button.secondary:hover {
-        background: #2c313a;
-        color: #ffffff;
+        background: var(--bg-light);
+        color: var(--fg-max);
     }
 
     .toolbar .controls button:disabled {
-        background: #4b5263;
-        color: #282c34;
+        background: var(--border-light);
+        color: var(--bg);
         cursor: not-allowed;
     }
 
     .toggle-menu {
         background: transparent;
-        color: #abb2bf;
+        color: var(--fg);
         border: none;
         cursor: pointer;
         font-size: 1.5rem;
@@ -187,7 +188,7 @@
     }
 
     .toggle-menu:hover {
-        color: #ffffff;
-        background: #2c313a;
+        color: var(--fg-max);
+        background: var(--bg-light);
     }
 </style>

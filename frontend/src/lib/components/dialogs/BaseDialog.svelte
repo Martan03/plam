@@ -33,9 +33,9 @@
 
 <style>
     dialog {
-        background-color: #21252b;
-        color: #abb2bf;
-        border: 1px solid #181a1f;
+        background-color: var(--bg-panel);
+        color: var(--fg);
+        border: 1px solid var(--border);
         border-radius: 8px;
         padding: 1.3rem 1.5rem;
         width: var(--dialog-width);
@@ -53,7 +53,7 @@
     dialog h2 {
         margin: 0 0 1rem 0;
         font-size: 1.25rem;
-        color: color-mix(in srgb, var(--primary, #3acbaf) 35%, white 65%);
+        color: color-mix(in srgb, var(--primary) 35%, var(--fg-max) 65%);
     }
 
     .content {
@@ -74,13 +74,13 @@
 
     :global(.dialog-label) {
         font-size: 0.9rem;
-        color: #abb2bf;
+        color: var(--fg);
     }
 
     :global(.dialog-input) {
-        background-color: #181a1f;
-        border: 1px solid #4b5263;
-        color: #abb2bf;
+        background-color: var(--border);
+        border: 1px solid var(--border-light);
+        color: var(--fg);
         padding: 0.5rem;
         border-radius: 4px;
         font-family: inherit;
@@ -93,7 +93,7 @@
 
     :global(.dialog-input:focus) {
         outline: none;
-        border-color: var(--primary, #3acbaf);
+        border-color: var(--primary);
     }
 
     :global(.dialog-btn) {
@@ -106,26 +106,26 @@
     }
 
     :global(.dialog-btn:disabled) {
-        background: #4b5263 !important;
-        color: #abb2bf !important;
+        background: var(--border-light);
+        color: var(--fg);
         cursor: not-allowed;
         opacity: 0.6;
     }
 
     :global(.cancel-btn) {
         background: transparent;
-        color: #abb2bf;
-        border: 1px solid #4b5263 !important;
+        color: var(--fg);
+        border: 1px solid var(--border-light);
     }
 
     :global(.cancel-btn:hover:not(:disabled)) {
-        background: #2c313a;
-        color: #ffffff;
+        background: var(--bg-light);
+        color: var(--fg-max);
     }
 
     :global(.danger-btn) {
         background: #e06c75;
-        color: #282c34;
+        color: var(--bg);
     }
 
     :global(.danger-btn:hover:not(:disabled)) {
@@ -133,11 +133,11 @@
     }
 
     :global(.primary-btn) {
-        background: var(--primary, #3acbaf);
-        color: #282c34;
+        background: var(--primary);
+        color: var(--bg);
     }
 
     :global(.primary-btn:hover:not(:disabled)) {
-        background: color-mix(in srgb, var(--primary, #3acbaf), black 20%);
+        background: color-mix(in srgb, var(--primary), var(--hover-dim) 20%);
     }
 </style>

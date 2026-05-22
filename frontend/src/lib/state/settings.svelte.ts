@@ -1,11 +1,19 @@
 const SETTINGS_KEY = "plam-setting";
 
+export const THEMES = ["slate", "graphite"] as const;
+
 const defaultSettings = {
     vimMode: false,
     primaryColor: "#3acbaf",
+    theme: "slate",
 };
 
-type Settings = typeof defaultSettings;
+type Theme = (typeof THEMES)[number];
+type Settings = {
+    vimMode: boolean;
+    primaryColor: string;
+    theme: Theme;
+};
 
 function createSettings() {
     const stored = localStorage.getItem(SETTINGS_KEY);
@@ -21,7 +29,7 @@ function createSettings() {
     }
 
     return {
-        get vimMode() {
+        get vimMode(): boolean {
             return state.vimMode;
         },
         set vimMode(value: boolean) {
@@ -29,11 +37,19 @@ function createSettings() {
             save();
         },
 
-        get primaryColor() {
+        get primaryColor(): string {
             return state.primaryColor;
         },
         set primaryColor(value: string) {
             state.primaryColor = value;
+            save();
+        },
+
+        get theme(): Theme {
+            return state.theme;
+        },
+        set theme(value: Theme) {
+            state.theme = value;
             save();
         },
     };

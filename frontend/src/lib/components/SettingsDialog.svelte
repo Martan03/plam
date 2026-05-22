@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { settings } from "../state/settings.svelte";
+    import { settings, THEMES } from "../state/settings.svelte";
     import BaseDialog from "./dialogs/BaseDialog.svelte";
 
     let dialog: ReturnType<typeof BaseDialog>;
@@ -35,6 +35,19 @@
                 title="Choose Accent Color"
             />
         </div>
+
+        <div class="setting-row">
+            <div class="setting-info">
+                <h3>Theme</h3>
+                <p>Color theme of the interface.</p>
+            </div>
+
+            <select bind:value={settings.theme} class="settings-input">
+                {#each THEMES as theme}
+                    <option value={theme}>{theme}</option>
+                {/each}
+            </select>
+        </div>
     </div>
     {#snippet actions()}
         <button class="dialog-btn primary-btn" onclick={close}>Done</button>
@@ -52,7 +65,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid #181a1f;
+        border-bottom: 1px solid var(--border);
         padding-bottom: 0.6rem;
         cursor: pointer;
     }
@@ -60,13 +73,13 @@
     .setting-info h3 {
         margin: 0 0 0.25rem 0;
         font-size: 1rem;
-        color: #abb2bf;
+        color: var(--fg);
     }
 
     .setting-info p {
         margin: 0;
         font-size: 0.85rem;
-        color: #5c6370;
+        color: var(--fg-disabled);
     }
 
     .switch {
@@ -89,7 +102,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background-color: #4b5263;
+        background-color: var(--border-light);
         transition: 0.2s;
         border-radius: 24px;
     }
@@ -101,18 +114,18 @@
         width: 18px;
         left: 3px;
         bottom: 3px;
-        background-color: #21252b;
+        background-color: var(--bg-panel);
         transition: 0.2s;
         border-radius: 50%;
     }
 
     input:checked + .slider {
-        background-color: var(--primary, #3acbaf);
+        background-color: var(--primary);
     }
 
     input:checked + .slider:before {
         transform: translateX(20px);
-        background-color: #282c34;
+        background-color: var(--bg);
     }
 
     .color-picker {
@@ -138,12 +151,26 @@
     }
 
     .color-picker::-webkit-color-swatch {
-        border: 2px solid #4b5263;
+        border: 2px solid var(--border-light);
         border-radius: 6px;
     }
 
     .color-picker::-moz-color-swatch {
-        border: 2px solid #4b5263;
+        border: 2px solid var(--border-light);
         border-radius: 6px;
+    }
+
+    .settings-input {
+        background-color: var(--bg-dark);
+        border: 1px solid var(--border-light);
+        color: var(--fg);
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 1rem;
+    }
+
+    select.settings-input {
+        cursor: pointer;
     }
 </style>

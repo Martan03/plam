@@ -84,8 +84,8 @@
     .terminal {
         display: flex;
         flex-direction: column;
-        background-color: #1e2227;
-        border-top: 1px solid #181a1f;
+        background-color: var(--bg-dark);
+        border-top: 1px solid var(--border);
         height: var(--term-height);
         flex-shrink: 0;
         position: relative;
@@ -124,7 +124,7 @@
         padding: 0 1rem;
         height: 30px;
         min-height: 30px;
-        background-color: #21252b;
+        background-color: var(--bg-panel);
         color: inherit;
         border: none;
         cursor: pointer;
@@ -141,7 +141,7 @@
     .tabs button {
         background: transparent;
         border: none;
-        color: #5c6370;
+        color: var(--fg-disabled);
         cursor: pointer;
         font-family: inherit;
         font-size: 0.85rem;
@@ -154,14 +154,14 @@
     }
 
     .tabs button:hover {
-        background-color: #282c34;
-        color: #abb2bf;
+        background-color: var(--bg);
+        color: var(--fg);
     }
 
     .tabs button.active {
-        color: #ffffff;
-        background-color: #1e2227;
-        border-top: 2px solid var(--primary, #3acbaf);
+        color: var(--fg-max);
+        background-color: var(--bg-dark);
+        border-top: 2px solid var(--primary);
     }
 
     .icon-btn {

@@ -140,8 +140,8 @@
 <style>
     aside {
         width: var(--menu-width);
-        background-color: #21252b;
-        border-right: 1px solid #181a1f;
+        background-color: var(--bg-panel);
+        border-right: 1px solid var(--border);
         display: flex;
         flex-direction: column;
         flex-shrink: 0;
@@ -179,12 +179,12 @@
         padding-right: 0.9rem;
         font-size: 0.8rem;
         font-weight: bold;
-        color: #5c6370;
+        color: var(--fg-disabled);
     }
 
     .add-btn {
         background: transparent;
-        color: #abb2bf;
+        color: var(--fg);
         border: none;
         cursor: pointer;
         font-size: 1.2rem;
@@ -199,8 +199,8 @@
     }
 
     .add-btn:hover {
-        color: #ffffff;
-        background: #2c313a;
+        color: var(--fg-max);
+        background: var(--bg-light);
     }
 
     .file-list {
@@ -217,20 +217,20 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        color: #abb2bf;
+        color: var(--fg);
         padding: 0.4rem 1rem;
         overflow: hidden;
     }
 
     .file-item:hover,
     .settings-btn:hover {
-        background-color: #2c313a;
+        background-color: var(--bg-light);
     }
 
     .file-item.active {
-        background-color: #2c313a;
-        color: var(--primary, #3acbaf);
-        border-left: 3px solid var(--primary, #3acbaf);
+        background-color: var(--bg-light);
+        color: var(--primary);
+        border-left: 3px solid var(--primary);
         padding-left: calc(1rem - 3px);
     }
 
@@ -253,8 +253,8 @@
 
     .footer {
         padding: 0.5rem 0;
-        border-top: 1px solid #181a1f;
-        background-color: #21252b;
+        border-top: 1px solid var(--border);
+        background-color: var(--bg-panel);
     }
 
     .settings-btn {
@@ -270,7 +270,7 @@
     }
 
     .settings-btn:hover {
-        background-color: #2c313a;
-        color: #ffffff;
+        background-color: var(--bg-light);
+        color: var(--fg-max);
     }
 </style>

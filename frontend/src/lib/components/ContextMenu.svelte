@@ -52,8 +52,8 @@
     .context-menu {
         position: fixed;
         z-index: 1000;
-        background-color: #282c34;
-        border: 1px solid #181a1f;
+        background-color: var(--bg);
+        border: 1px solid var(--border);
         border-radius: 6px;
         padding: 0.25rem;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -65,7 +65,7 @@
     :global(.context-menu button) {
         background: transparent;
         border: none;
-        color: #abb2bf;
+        color: var(--fg);
         text-align: left;
         padding: 0.4rem 0.5rem;
         border-radius: 4px;
@@ -78,13 +78,13 @@
     }
 
     :global(.context-menu button:hover) {
-        background-color: var(--primary, #3acbaf);
-        color: #282c34;
+        background-color: var(--primary);
+        color: var(--bg);
     }
 
     :global(.context-menu button.danger:hover) {
         background-color: #e06c75;
-        color: #282c34;
+        color: var(--bg);
     }
 
     :global(.context-menu button svg) {
