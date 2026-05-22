@@ -11,6 +11,7 @@
     import { persisted } from "./lib/state/storage.svelte.js";
     import { settings } from "./lib/state/settings.svelte.js";
     import MenuIcon from "./lib/components/icons/MenuIcon.svelte";
+    import ResetDialog from "./lib/components/dialogs/ResetDialog.svelte";
 
     let outputValue = $state("System ready. Click 'Run' to evaluate.");
     let stdinValue = $state("");
@@ -45,8 +46,8 @@
         resetDialog.show();
     }
 
-    function resetCode() {
-        workspace.currentCode = initialCode;
+    function resetCode(content: string) {
+        workspace.currentCode = content;
     }
 </script>
 
@@ -84,13 +85,7 @@
     </div>
 </main>
 
-<ConfirmDialog
-    bind:this={resetDialog}
-    title="Reset code?"
-    message="This will reset your current code. This action cannot be undone."
-    confirm="Reset"
-    onconfirm={resetCode}
-/>
+<ResetDialog bind:this={resetDialog} onconfirm={resetCode} />
 
 <style>
     * {
