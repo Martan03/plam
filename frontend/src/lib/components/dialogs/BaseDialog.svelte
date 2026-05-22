@@ -66,6 +66,36 @@
         gap: 1rem;
     }
 
+    :global(.dialog-input-wrapper) {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    :global(.dialog-label) {
+        font-size: 0.9rem;
+        color: #abb2bf;
+    }
+
+    :global(.dialog-input) {
+        background-color: #181a1f;
+        border: 1px solid #4b5263;
+        color: #abb2bf;
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-family: inherit;
+        font-size: 1rem;
+    }
+
+    :global(select.dialog-input) {
+        cursor: pointer;
+    }
+
+    :global(.dialog-input:focus) {
+        outline: none;
+        border-color: var(--primary, #3acbaf);
+    }
+
     :global(.dialog-btn) {
         padding: 0.5rem 1.25rem;
         border-radius: 4px;

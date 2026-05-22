@@ -1,12 +1,21 @@
 <script lang="ts">
+    import type { Snippet } from "svelte";
     import BaseDialog from "./BaseDialog.svelte";
 
+    interface Props {
+        title: string;
+        label: string;
+        children?: Snippet;
+        confirm: string;
+        onsubmit: (filename: string) => void;
+    }
     let {
         title = "Enter value",
         label = "",
+        children,
         confirm = "Submit",
         onsubmit,
-    } = $props();
+    }: Props = $props();
 
     let dialog: ReturnType<typeof BaseDialog>;
     let inputElem: HTMLInputElement;
@@ -36,20 +45,25 @@
 </script>
 
 <BaseDialog bind:this={dialog} {title}>
-    <div class="input-wrapper">
+    <div class="dialog-input-wrapper">
         {#if label}
-            <label for="prompt-input">{label}</label>
+            <label class="dialog-label" for="prompt-input">{label}</label>
         {/if}
         <input
             bind:this={inputElem}
             type="text"
             id="prompt-input"
+            class="dialog-input"
             bind:value={inputValue}
             onkeydown={handleKey}
             placeholder="e.g. test.pl"
             autocomplete="off"
         />
     </div>
+
+    {#if children}
+        {@render children()}
+    {/if}
 
     {#snippet actions()}
         <button class="dialog-btn cancel-btn" onclick={close}>Cancel</button>
@@ -62,29 +76,7 @@
 </BaseDialog>
 
 <style>
-    .input-wrapper {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    label {
-        font-size: 0.9rem;
-        color: #abb2bf;
-    }
-
-    input {
-        background-color: #181a1f;
-        border: 1px solid #4b5263;
-        color: #abb2bf;
-        padding: 0.5rem;
-        border-radius: 4px;
-        font-family: inherit;
-        font-size: 1rem;
-    }
-
-    input:focus {
-        outline: none;
-        border-color: var(--primary, #3acbaf);
+    .dialog-input-wrapper {
+        margin-bottom: 0.5rem;
     }
 </style>

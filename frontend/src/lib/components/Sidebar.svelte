@@ -2,6 +2,7 @@
     import { persisted } from "../state/storage.svelte";
     import ContextMenu from "./ContextMenu.svelte";
     import ConfirmDialog from "./dialogs/ConfirmDialog.svelte";
+    import CreateDialog from "./dialogs/CreateDialog.svelte";
     import PromptDialog from "./dialogs/PromptDialog.svelte";
     import EditIcon from "./icons/EditIcon.svelte";
     import SettingsIcon from "./icons/SettingsIcon.svelte";
@@ -14,7 +15,7 @@
     let isDragging = $state(false);
 
     let deleteDialog: ReturnType<typeof ConfirmDialog>;
-    let newDialog: ReturnType<typeof PromptDialog>;
+    let newDialog: ReturnType<typeof CreateDialog>;
     let renameDialog: ReturnType<typeof PromptDialog>;
     let settingsDialog: ReturnType<typeof SettingsDialog>;
     let contextMenu: ReturnType<typeof ContextMenu>;
@@ -109,12 +110,12 @@
     onconfirm={execDelete}
 />
 
-<PromptDialog
+<CreateDialog
     bind:this={newDialog}
     title="Create new file"
-    label="Filename:"
     confirm="Create"
-    onsubmit={(filename: string) => workspace.add(filename)}
+    onconfirm={(filename: string, content: string) =>
+        workspace.add(filename, content)}
 />
 
 <PromptDialog
