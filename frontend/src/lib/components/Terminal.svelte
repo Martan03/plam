@@ -3,7 +3,11 @@
     import MaximizeIcon from "./icons/MaximizeIcon.svelte";
     import MinimizeIcon from "./icons/MinimizeIcon.svelte";
 
-    let { output = $bindable(), input = $bindable("") } = $props();
+    let {
+        output = $bindable(),
+        input = $bindable(""),
+        runtime = null,
+    } = $props();
 
     const termHeight = persisted("plam-term-height", 200);
     let isMaximized = $state(false);
@@ -26,6 +30,25 @@
         if (height > 30) {
             termHeight.value = height;
         }
+    }
+
+    function formatRuntime(time: number | null): string {
+        if (time === null) return "";
+
+        const mins = Math.floor(time / 60000);
+        const secs = Math.floor((time % 60000) / 1000);
+        const msecs = Math.round(time % 1000);
+
+        const pad = (num: number, digits: number = 2) =>
+            num.toString().padStart(digits, "0");
+
+        if (mins > 0) {
+            return `${mins}m ${pad(secs)}s ${pad(msecs, 3)}ms}`;
+        }
+        if (secs > 0) {
+            return `${secs}s ${pad(msecs, 3)}ms`;
+        }
+        return `${msecs}ms`;
     }
 
     const onPointerUp = () => (isDragging = false);
@@ -59,13 +82,19 @@
             >
         </div>
 
-        <button class="icon-btn" onclick={toggleMaximized}>
-            {#if isMaximized}
-                <MinimizeIcon width="0.8rem" />
-            {:else}
-                <MaximizeIcon width="0.8rem" />
+        <div class="actions">
+            {#if runtime !== null}
+                <span class="runtime">Runtime: {formatRuntime(runtime)}</span>
             {/if}
-        </button>
+
+            <button class="icon-btn" onclick={toggleMaximized}>
+                {#if isMaximized}
+                    <MinimizeIcon width="0.8rem" />
+                {:else}
+                    <MaximizeIcon width="0.8rem" />
+                {/if}
+            </button>
+        </div>
     </div>
 
     <div class="terminal-content">
@@ -162,6 +191,18 @@
         color: var(--fg-max);
         background-color: var(--bg-dark);
         border-top: 2px solid var(--primary);
+    }
+
+    .actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .runtime {
+        font-size: 0.8rem;
+        color: var(--fg-disabled);
+        font-family: monospace;
     }
 
     .icon-btn {

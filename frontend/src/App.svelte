@@ -18,6 +18,7 @@
     let outputValue = $state("System ready. Click 'Run' to evaluate.");
     let stdinValue = $state("");
     let isWasmLoaded = $state(false);
+    let runtime = $state<number | null>(null);
 
     const workspace = createWorkspace(initialCode);
     const isMenuVisible = persisted("plam-menu-visible", true);
@@ -52,12 +53,15 @@
 
     function runEval() {
         if (!isWasmLoaded) return;
-        terminal?.showOutput();
         try {
+            const start = performance.now();
             outputValue = eval_lambda(workspace.currentCode, stdinValue);
+            const end = performance.now();
+            runtime = end - start;
         } catch (e) {
             outputValue = `Error: ${e}`;
         }
+        terminal?.showOutput();
     }
 
     function showReset() {
@@ -102,6 +106,7 @@
             <Terminal
                 bind:this={terminal}
                 output={outputValue}
+                {runtime}
                 bind:input={stdinValue}
             />
         </div>
