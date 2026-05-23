@@ -1,3 +1,5 @@
+import LZString from "lz-string";
+
 export function createWorkspace(initCode: string) {
     const storedFiles = localStorage.getItem("plam-files");
     const storedActive = localStorage.getItem("plam-active");
@@ -93,6 +95,41 @@ export function createWorkspace(initCode: string) {
             if (active === filename) {
                 active = Object.keys(files)[0];
             }
+            save();
+            return true;
+        },
+
+        /**
+         * Generates a share link for the given file (or active).
+         * @param filename - filename of file to generate URL.
+         * @returns {string} URL with encoded code.
+         */
+        share(filename: string | null = null): string {
+            const content = files[filename ?? active];
+            const compressed = LZString.compressToEncodedURIComponent(content);
+
+            const b = `${window.location.origin}${window.location.pathname}`;
+            return `${b}?code=${compressed}`;
+        },
+
+        /**
+         * Adds the shared file into the workspace.
+         * @param code - encoded URL code.
+         * @returns {boolean} - true on success, else false
+         */
+        addShared(code: string): boolean {
+            const dec = LZString.decompressFromEncodedURIComponent(code);
+            if (!dec) return false;
+
+            let filename = "shared.pl";
+            let counter = 1;
+            while (files[filename]) {
+                filename = `shared_${counter}.pl`;
+                counter++;
+            }
+
+            files[filename] = dec;
+            active = filename;
             save();
             return true;
         },

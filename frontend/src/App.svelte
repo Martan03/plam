@@ -12,6 +12,8 @@
     import { settings } from "./lib/state/settings.svelte.js";
     import MenuIcon from "./lib/components/icons/MenuIcon.svelte";
     import ResetDialog from "./lib/components/dialogs/ResetDialog.svelte";
+    import ShareIcon from "./lib/components/icons/ShareIcon.svelte";
+    import AlertDialog from "./lib/components/dialogs/AlertDialog.svelte";
 
     let outputValue = $state("System ready. Click 'Run' to evaluate.");
     let stdinValue = $state("");
@@ -22,10 +24,19 @@
 
     let terminal: ReturnType<typeof Terminal>;
     let resetDialog: ReturnType<typeof ConfirmDialog>;
+    let shareDialog: ReturnType<typeof AlertDialog>;
 
     onMount(async () => {
         await init();
         isWasmLoaded = true;
+
+        const params = new URLSearchParams(window.location.search);
+        const sharedCode = params.get("code");
+        if (sharedCode) {
+            workspace.addShared(sharedCode);
+            const pathname = window.location.pathname;
+            window.history.replaceState({}, document.title, pathname);
+        }
     });
 
     $effect(() => {
@@ -33,7 +44,13 @@
         document.documentElement.setAttribute("data-theme", settings.theme);
     });
 
-    function runEvaluation() {
+    function shareCurrent() {
+        const url = workspace.share();
+        navigator.clipboard.writeText(url);
+        shareDialog.show();
+    }
+
+    function runEval() {
         if (!isWasmLoaded) return;
         terminal?.showOutput();
         try {
@@ -65,8 +82,13 @@
             <h1>plam</h1>
         </div>
         <div class="controls">
-            <button class="secondary" onclick={showReset}>Reset Code</button>
-            <button onclick={runEvaluation} disabled={!isWasmLoaded}>
+            <button class="toggle-menu" onclick={shareCurrent} title="Share">
+                <ShareIcon width="1.2rem" />
+            </button>
+            <button class="btn secondary" onclick={showReset}>
+                Reset Code
+            </button>
+            <button class="btn" onclick={runEval} disabled={!isWasmLoaded}>
                 ▶ Run
             </button>
         </div>
@@ -87,6 +109,12 @@
 </main>
 
 <ResetDialog bind:this={resetDialog} onconfirm={resetCode} />
+<AlertDialog
+    bind:this={shareDialog}
+    onconfirm={() => {}}
+    title="Sharing code"
+    message="Share link copied to clipboard!"
+/>
 
 <style>
     * {
@@ -140,7 +168,7 @@
         align-items: center;
     }
 
-    .toolbar .controls button {
+    .toolbar .controls .btn {
         padding: 0.5rem 1.5rem;
         background: var(--primary);
         color: var(--bg);
@@ -157,7 +185,7 @@
         border: 1px solid var(--border-light);
     }
 
-    .toolbar .controls button:hover {
+    .toolbar .controls .btn:hover {
         background: color-mix(in srgb, var(--primary), var(--hover-dim) 20%);
     }
 
@@ -166,7 +194,7 @@
         color: var(--fg-max);
     }
 
-    .toolbar .controls button:disabled {
+    .toolbar .controls .btn:disabled {
         background: var(--border-light);
         color: var(--bg);
         cursor: not-allowed;
