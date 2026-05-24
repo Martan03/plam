@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { oneDark } from "@codemirror/theme-one-dark";
+    import { bracketMatching } from "@codemirror/language";
     import { basicSetup, EditorView } from "codemirror";
     import { editorSyntax, editorTheme } from "../highlighter";
     import { Compartment } from "@codemirror/state";
@@ -16,9 +16,9 @@
             doc: code,
             extensions: [
                 basicSetup,
-                // oneDark,
                 editorTheme,
                 editorSyntax,
+                bracketMatching(),
                 vimCompartment.of(settings.vimMode ? vim() : []),
                 EditorView.updateListener.of((update) => {
                     if (update.docChanged) {

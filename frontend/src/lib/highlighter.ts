@@ -71,6 +71,16 @@ export const editorTheme = EditorView.theme(
         "&.cm-focused .cm-selectionBackground, ::selection": {
             backgroundColor: "var(--border-light)",
         },
+        "&.cm-focused .cm-fat-cursor": {
+            backgroundColor: "var(--primary) !important",
+            border: "none !important",
+            color: "var(--bg) !important",
+        },
+        "&:not(.cm-focused) .cm-fat-cursor": {
+            backgroundColor: "transparent !important",
+            outline: "1px solid var(--primary) !important",
+            color: "var(--fg) !important",
+        },
     },
     { dark: true },
 );
