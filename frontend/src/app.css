@@ -33,3 +33,18 @@
 
     --hover-dim: black;
 }
+
+html {
+    background-color: var(--bg);
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: sans-serif;
+    text-align: left;
+}
