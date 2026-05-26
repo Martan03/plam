@@ -120,7 +120,7 @@
                 </em>
             </p>
 
-            <h2>&eta;-conversion</h2>
+            <h2>3. &eta;-conversion</h2>
 
             <p>
                 This is a cleanup conversion. If a function just takes an
@@ -139,29 +139,24 @@ fn test;
 fn' test;
                 `}
             />
+
+            <p>
+                In the following sections, we'll talk about how to represent
+                data types, such as booleans and numbers. Note that there are
+                many ways you can achieve this, but we will show just one for
+                each type. If you want a bit of a challenge, you can try to
+                represent them in another way!
+            </p>
         </article>
 
         <article class="wiki-content">
             <h2>Boolean algebra</h2>
 
             <p>
-                Because we don't have built-in data types, how do we represent
-                <code>true</code> and <code>false</code>? We use functions that
-                act like <code>if-else</code> statements!
-            </p>
-
-            <p>
-                <em>
-                    Note: There are many ways of representing types, we will
-                    show one of them. You can try thinking of another way to
-                    represent them!
-                </em>
-            </p>
-
-            <p>
                 A boolean in Lambda Calculus is simply a function that takes two
                 arguments. <code>true</code> returns the first argument and
-                <code>false</code> returns the second argument.
+                <code>false</code> returns the second argument. They act just
+                like <code>if-else</code> statements!
             </p>
 
             <CodeSnippet
@@ -184,6 +179,153 @@ let !  = \a.a false true
 let && = \a b.a b false
 // OR: if 'a' is true, return true, otherwise return 'b'
 let || = \a b.a true b
+                `}
+            />
+
+            <p>Try implementing xor and implication by yourself!</p>
+        </article>
+
+        <article>
+            <h2>Tuples</h2>
+
+            <p>
+                Tuples are very useful in Lambda Calculus. Tuple is a function
+                which takes two values and a function and calls the function
+                with the values as arguments.
+            </p>
+
+            <p>
+                We can also implement getter functions for getting the first and
+                the second value. These are really easy to implement. To get the
+                first value, we provide <code>true</code> as the function
+                argument, and to get the second value, we provide
+                <code>false</code>.
+            </p>
+
+            <CodeSnippet
+                code={String.raw`
+let , = \a b f.f a b
+let fst = \p.p true
+let snd = \p.p false
+                `}
+            />
+
+            <p>
+                If you're not sure what's happening, it might be a good idea to
+                visualize step-by-step what is happening under the hood. We'll
+                start with the expression of <code>fst</code> and provide a tuple
+                as an argument.
+            </p>
+
+            <CodeSnippet
+                code={String.raw`
+// 1. We start with calling 'fst' on our tuple
+fst (, x y)
+// 2. Expand 'fst'
+(\p.p true) (, x y)
+// 3. Apply the '(, x y)' (beta reduction)
+(, x y) true
+// 4. Expand the tuple operator ','
+(\a b f.f a b) x y true
+// 5. Apply 'x', 'y' and 'true' to the tuple (beta reduction)
+true x y
+                `}
+            />
+
+            <p>
+                And same would apply for the <code>snd</code>! As we already
+                know, <code>true</code> returns the first argument, in this case the
+                first value from the tuple.
+            </p>
+        </article>
+
+        <article>
+            <h2>Numbers</h2>
+
+            <p>
+                Since we don't have integers in Lambda Calculus, how do we
+                represent numbers? We can use Alonzo Church's idea of
+                representing numbers as
+                <strong>the concept of repetition</strong>.
+            </p>
+
+            <p>
+                Numbers are functions, which take an action and a starting
+                value, and they apply the action to the starting number
+                <code>N</code> times, depending on the number it represents.
+            </p>
+
+            <CodeSnippet
+                code={String.raw`
+let 0 = \f x.x // Apply action 0 times.
+let 1 = \f x.f x        // ... 1 time.
+let 2 = \f x.f (f x)    // ... 2 times.
+// And so on...
+                `}
+            />
+
+            <h3>Counting up!</h3>
+
+            <p>
+                As you probably noticed, it isn't very nice having to define
+                each number manually. We can solve this by writing a function
+                that takes a number and adds 1 to it. We call this function
+                <strong>successor</strong> function.
+            </p>
+
+            <p>
+                We can do this by applying the <code>x</code> argument as
+                <code>f x</code>, which adds another repetition. Notice we also
+                apply the <code>f</code> argument, since we have to apply from the
+                first argument!
+            </p>
+
+            <CodeSnippet
+                code={String.raw`
+let succ = \a f x.a f (f x)
+// Now we can define 0 and others using 'succ' function!
+let 0 = \f x.x
+let 1 = succ 0
+// And so on...
+                `}
+            />
+
+            <h3>Counting down!</h3>
+
+            <p>
+                Subtracting in Lambda Calculus is quite tricky, since the
+                definition of the number is applying a function <code>N</code>
+                times, you can't easily "un-apply" a function.
+            </p>
+
+            <p>
+                We can achieve this by having a tuple holding two numbers:
+                <code>(current, previous)</code>. We start at
+                <code>(0, 0)</code> and on every step we shift the
+                <code>current</code> into <code>previous</code> and add 1 to the
+                <code>current</code>.
+            </p>
+
+            <ul>
+                <li>Step 0: <code>(0, 0)</code></li>
+                <li>Step 1: <code>(1, 0)</code></li>
+                <li>Step 2: <code>(2, 1)</code></li>
+                <li>Step 3: <code>(3, 2)</code></li>
+            </ul>
+
+            <p>
+                If we want to find a predecessor of 3, we can just do the
+                shifting 3 times and grab the <code>previous</code> value! From
+                the number definition, applying a function on a value
+                <code>N</code> times can be done by calling the number function with
+                both the function and the value arguments.
+            </p>
+
+            <CodeSnippet
+                code={String.raw`
+let shift = \p., (succ (fst p)) (fst p)
+// 'n shift (, 0 0)' - number function value
+let pred = \n.snd (n shift (, 0 0))
                 `}
             />
         </article>

@@ -36,7 +36,6 @@
     function runEval() {
         try {
             output = eval_lambda(`${hiddenCode}\n${code}`, "");
-            console.log(output);
         } catch (e) {
             output = `Error: ${e}`;
         }
