@@ -87,7 +87,7 @@ export const editorTheme = EditorView.theme(
 
 export const snippetTheme = EditorView.theme({
     "&": {
-        backgroundColor: "var(--bg-panel) !important",
+        backgroundColor: "var(--bg-light) !important",
     },
     ".cm-activeLine": {
         backgroundColor: "transparent !important",
