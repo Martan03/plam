@@ -19,6 +19,19 @@
         navigator.clipboard.writeText(window.location.href);
         shareDialog.show();
     }
+
+    const stdLibCode = String.raw`
+let true  = \t f.t
+let false = \t f.f
+let , = \a b f.f a b
+let fst = \p.p true
+let snd = \p.p false
+let cnum = \a.a $increment $counter
+let 0 = \f x.x
+let succ = \a f x.a f (f x)
+let shift = \p., (succ (fst p)) (fst p)
+let pred = \n.snd (n shift (, 0 0))
+    `;
 </script>
 
 <main class="app-container">
@@ -252,7 +265,8 @@ true x y
             <p>
                 Numbers are functions, which take an action and a starting
                 value, and they apply the action to the starting number
-                <code>N</code> times, depending on the number it represents.
+                <code>N</code> times, depending on the number it represents. This
+                can represent any unsigned integer.
             </p>
 
             <CodeSnippet
@@ -321,11 +335,71 @@ let 1 = succ 0
                 both the function and the value arguments.
             </p>
 
+            <p>
+                <em>
+                    Note: As you probably notices, the predecessor of 0 is just
+                    0.
+                </em>
+            </p>
+
             <CodeSnippet
+                runnable={true && isWasmLoaded}
+                hiddenCode={stdLibCode}
                 code={String.raw`
 let shift = \p., (succ (fst p)) (fst p)
 // 'n shift (, 0 0)' - number function value
 let pred = \n.snd (n shift (, 0 0))
+
+// Note: 'cnum' is custom function allowing to print numbers
+let 3 = succ (succ (succ 0));
+cnum (pred 3);
+                `}
+            />
+
+            <h3>Addition, Subtraction & Multiplication</h3>
+
+            <p>
+                Now that we can count up and down, arithmetics become easy.
+                Remember that a number is a function that applies a function
+                <code>N</code> times.
+            </p>
+
+            <p>
+                If we want to add two numbers <code>M</code> and <code>N</code>,
+                we just take the number <code>N</code> and apply the
+                <code>succ</code> <code>M</code> times! The same logic works for
+                subtraction using the <code>pred</code> function.
+            </p>
+
+            <CodeSnippet
+                runnable={true && isWasmLoaded}
+                hiddenCode={stdLibCode}
+                code={String.raw`
+let + = \a b.a succ b
+let - = \a b.b pred a
+
+let 2 = succ (succ 0);
+let 3 = succ 2;
+cnum (+ 3 2);
+cnum (- 3 2);
+                `}
+            />
+
+            <p>
+                Similar applies for multiplication, only instead of applying the
+                <code>succ</code> or <code>pred</code>, we can apply the factor,
+                since number is just a function!
+            </p>
+
+            <CodeSnippet
+                runnable={true && isWasmLoaded}
+                hiddenCode={stdLibCode}
+                code={String.raw`
+let * = \a b f.a (b f)
+
+let 2 = succ (succ 0);
+let 3 = succ 2;
+cnum (* 3 2);
                 `}
             />
         </article>
