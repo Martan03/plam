@@ -1,17 +1,22 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
+    import MenuIcon from "./icons/MenuIcon.svelte";
 
     let {
-        pretitle = null,
+        isMenuVisible = $bindable(true),
         children,
-    }: { pretitle?: Snippet | null; children: Snippet } = $props();
+    }: { isMenuVisible: boolean; children: Snippet } = $props();
 </script>
 
 <header class="toolbar">
     <div class="header">
-        {#if pretitle}
-            {@render pretitle()}
-        {/if}
+        <button
+            class="icon-btn"
+            title="{isMenuVisible ? 'Hide' : 'Show'} menu"
+            onclick={() => (isMenuVisible = !isMenuVisible)}
+        >
+            <MenuIcon width="1em" />
+        </button>
         <h1>plam</h1>
     </div>
     <div class="controls">

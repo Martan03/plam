@@ -68,7 +68,8 @@ export function createWorkspace(initCode: string) {
          * @returns {boolean} true on success, else false
          */
         rename(oldName: string, newName: string): boolean {
-            if (!files[oldName] || files[newName]) return false;
+            if (files[oldName] === undefined || files[newName] !== undefined)
+                return false;
 
             files[newName] = files[oldName];
             delete files[oldName];

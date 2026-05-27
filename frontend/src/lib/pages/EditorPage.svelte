@@ -14,6 +14,9 @@
     import ShareIcon from "../components/icons/ShareIcon.svelte";
     import AlertDialog from "../components/dialogs/AlertDialog.svelte";
     import Topbar from "../components/Topbar.svelte";
+    import Files from "../components/Files.svelte";
+    import WikiIcon from "../components/icons/WikiIcon.svelte";
+    import { navigate } from "../state/router.svelte.js";
 
     let outputValue = $state("System ready. Click 'Run' to evaluate.");
     let stdinValue = $state("");
@@ -69,17 +72,7 @@
 </script>
 
 <main class="app-container">
-    <Topbar>
-        {#snippet pretitle()}
-            <button
-                class="icon-btn"
-                title="{isMenuVisible.value ? 'Hide' : 'Show'} menu"
-                onclick={() => (isMenuVisible.value = !isMenuVisible.value)}
-            >
-                <MenuIcon width="1em" />
-            </button>
-        {/snippet}
-
+    <Topbar bind:isMenuVisible={isMenuVisible.value}>
         <button class="icon-btn" onclick={shareCurrent} title="Share">
             <ShareIcon width="1.2rem" />
         </button>
@@ -90,7 +83,18 @@
     </Topbar>
 
     <div class="content">
-        <Sidebar {workspace} bind:isVisible={isMenuVisible.value} />
+        <Sidebar bind:isVisible={isMenuVisible.value}>
+            <Files {workspace} />
+
+            {#snippet actions()}
+                <button
+                    class="sidebar-action-btn"
+                    onclick={() => navigate("/wiki")}
+                >
+                    <WikiIcon /> Wiki Page
+                </button>
+            {/snippet}
+        </Sidebar>
 
         <div class="editor">
             <Editor bind:code={workspace.currentCode} />
