@@ -21,16 +21,30 @@
     }
 
     const stdLibCode = String.raw`
+let cnum = \a.a $increment $counter
+let cbool = \b.b True False
 let true  = \t f.t
 let false = \t f.f
+let !  = \a.a false true
+let && = \a b.a b false
+let || = \a b.a true b
 let , = \a b f.f a b
 let fst = \p.p true
 let snd = \p.p false
-let cnum = \a.a $increment $counter
 let 0 = \f x.x
 let succ = \a f x.a f (f x)
+let 1 = succ 0
+let 2 = succ (succ 0)
+let 5 = succ (succ (succ 2))
 let shift = \p., (succ (fst p)) (fst p)
 let pred = \n.snd (n shift (, 0 0))
+let + = \a b.a succ b
+let - = \a b.b pred a
+let * = \a b f.a (b f)
+let isZero = \n.n (\_.false) true;
+let gte = \a b.isZero (- b a)
+let gt = \a b.! (gte b a)
+let Y = \f.(\x.f (x x)) (\x.f (x x));
     `;
 </script>
 
@@ -107,7 +121,7 @@ let pred = \n.snd (n shift (, 0 0))
                 `}
             />
 
-            <h2>2. &beta;-conversion</h2>
+            <h3>2. &beta;-conversion</h3>
 
             <p>
                 This is the actual application step. When you apply a function
@@ -133,7 +147,7 @@ let pred = \n.snd (n shift (, 0 0))
                 </em>
             </p>
 
-            <h2>3. &eta;-conversion</h2>
+            <h3>3. &eta;-conversion</h3>
 
             <p>
                 This is a cleanup conversion. If a function just takes an
@@ -368,7 +382,10 @@ cnum (pred 3);
                 If we want to add two numbers <code>M</code> and <code>N</code>,
                 we just take the number <code>N</code> and apply the
                 <code>succ</code> <code>M</code> times! The same logic works for
-                subtraction using the <code>pred</code> function.
+                subtraction using the <code>pred</code> function. The only catch
+                with subtraction is that we don't have negative numbers, but
+                because our <code>pred</code> function returns 0 for 0, we can
+                use that behaviour (e.g. <code>4 - 5 = 0</code>).
             </p>
 
             <CodeSnippet
@@ -402,6 +419,192 @@ let 3 = succ 2;
 cnum (* 3 2);
                 `}
             />
+
+            <h3>Predicates</h3>
+
+            <p>
+                To write real programs, we need to be able to check if number is
+                zero, check if two numbers are equal, and compare them.
+            </p>
+
+            <p>
+                Checking if number is zero can be done by passing the number an
+                action, which ignores its argument and just returns
+                <code>false</code>, and <code>true</code>. If the number is 0,
+                the action never runs, and we get <code>true</code>. If the
+                number is not 0, the action runs at least once, hence we get
+                <code>false</code>.
+            </p>
+
+            <CodeSnippet
+                runnable={true && isWasmLoaded}
+                hiddenCode={stdLibCode}
+                code={String.raw`
+let isZero = \n.n (\_.false) true;
+
+isZero 0;
+isZero 2;
+                `}
+            />
+
+            <p>
+                To check equality and compare the numbers, we can use the
+                subtraction we already implemented in combination with the
+                <code>isZero</code> check!
+            </p>
+
+            <CodeSnippet
+                runnable={true && isWasmLoaded}
+                hiddenCode={stdLibCode}
+                code={String.raw`
+// We don't have negative numbers, need to check both ways!
+let eq = \a b.&& (isZero (- a b)) (isZero (- b a))
+let gte = \a b.isZero (- b a);
+
+eq 2 2;
+eq 0 2;
+gte 2 0;
+gte 0 2;
+                `}
+            />
+
+            <p>Try to implement a strict greater by yourself!</p>
+
+            <p>
+                You might be wondering, why didn't we do division as well? The
+                reason is it's a bit complicated. We need to learn recursion
+                first!
+            </p>
+        </article>
+
+        <article>
+            <h2>Recursion</h2>
+
+            <p>
+                In pure Lambda Calculus, functions mathematically have no names.
+                But what about <code>let</code> keyword? It's just a helpful keyword
+                for our interpreter. It evaluates the right side of the equals sign
+                and saves it to a dictionary. You can probably spot the issue now.
+                The name is not yet defined in the inner body of the function!
+            </p>
+
+            <p>
+                We can solve this by passing the function to itself (self). This
+                works, but as you can see, it can get annoying.
+            </p>
+
+            <CodeSnippet
+                runnable={true && isWasmLoaded}
+                hiddenCode={stdLibCode}
+                code={String.raw`
+let fact = \self n.isZero n 1 (* n (self self (pred n)));
+cnum (fact fact 5);
+                `}
+            />
+
+            <h3>Y-Combinator</h3>
+
+            <p>
+                The solution is to use <strong>Fixed-Point Combinator</strong>,
+                also known as <strong>Y-Combinator</strong>. It's a wrapper
+                function to which you hand a function (such as
+                <code>fact</code>) and it automatically makes it that the
+                function is endlessly fed a copy of itself as its first
+                argument.
+            </p>
+
+            <CodeSnippet code="let Y = \f.(\x.f (x x)) (\x.f (x x))" />
+
+            <p>We can trace the execution using Y-Combinator:</p>
+            <CodeSnippet
+                code={String.raw`
+Y myFunc
+// 1. Expand 'Y'
+(\f.(\x.f (x x)) (\x.f (x x))) myFunc
+// 2. Beta reduction of 'myFunc'
+(\x.myFunc (x x)) (\x.myFunc (x x))
+// 3. Beta reduction of '(\x.myFunc (x x))'
+myFunc ((\x.myFunc (x x)) (\x.myFunc (x x)))
+// 4. Undo beta reduction of the 'myFunc' (equivalence)
+myFunc ((\f.(\x.f (x x)) (\x.f (x x))) myFunc)
+// 5. Replace the expression of Y-combinator with its name
+myFunc (Y myFunc)
+                `}
+            />
+
+            <p>
+                We can now use the Y-combinator to reimplement our factorial
+                example.
+            </p>
+            <CodeSnippet
+                runnable={true && isWasmLoaded}
+                hiddenCode={stdLibCode}
+                code={String.raw`
+let fact = Y (\self n.isZero n 1 (* n (self (pred n))));
+cnum (fact 5);
+                `}
+            />
+
+            <p>
+                <em>
+                    Note: This works because the expression is evaluated lazily,
+                    meaning only expressions that are needed are evaluated,
+                    otherwise it would cause Stack Overflow error.
+                </em>
+            </p>
+
+            <h3>Division</h3>
+
+            <p>
+                Now that we now how to make recursion, we can finally add the
+                number division! To divide two numbers, we can subtract the
+                divisor from the dividend until the dividend is less than the
+                divisor, and we just count how many times we subtracted. Because
+                we don't have floating point numbers, the result will be an
+                integer (result is floored).
+            </p>
+            <CodeSnippet
+                runnable={true && isWasmLoaded}
+                hiddenCode={stdLibCode}
+                code={String.raw`
+let / = (Y \f r a b.(gt b a) r (f (succ r) (- a b) b)) 0;
+cnum (/ 5 2);
+                `}
+            />
+
+            <p>
+                <em>
+                    Note: Division by 0 should throw exception, but how can we
+                    do that? In Lambda Calculus, it's common practice that
+                    exceptions are modeled as infinite recursion, which our code
+                    actual does!
+                </em>
+            </p>
+        </article>
+
+        <article>
+            <h2>Conclusion</h2>
+
+            <p>
+                Now that we went through all the topics, you should be capable
+                of coding in Lambda Calculus! It isn't actually made to be used
+                as a full featured programming language, but it's a fun way to
+                learn functional programming. If you enjoy coding in the Lambda
+                Calculus, I highly recommend trying functional programming
+                languages, such as Haskell. Haskell was created based on the
+                Lambda Calculus and extended with features that coders need to
+                make actual programs, so you can do anything you can think of!
+            </p>
+
+            <p>
+                <em>
+                    Note: We already know about tuples. You can use them to
+                    create Lists (or Linked Lists)! Try creating them! Little
+                    hint for you if you're not sure how: first value in tuple
+                    can hold the item value and the second value can point to
+                    another list item.
+                </em>
+            </p>
         </article>
     </div>
 </main>
