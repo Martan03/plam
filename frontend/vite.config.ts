@@ -6,5 +6,5 @@ import wasm from "vite-plugin-wasm";
 export default defineConfig({
     plugins: [svelte(), wasm()],
     server: { fs: { allow: [".."] } },
-    base: "./",
+    base: process.env.NODE_ENV === "production" ? "/plam/" : "/",
 });
