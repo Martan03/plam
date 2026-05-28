@@ -5,6 +5,8 @@ Pure lambda calculus interpreter.
 Simplifies each expression in the file to form where it is either a lambda
 function or unbound variable.
 
+<img alt="image" src="https://github.com/user-attachments/assets/c7400db7-3cc1-4f8f-849f-4f564254c3d3" />
+
 ## Syntax
 
 ### Basic lambda calcul
