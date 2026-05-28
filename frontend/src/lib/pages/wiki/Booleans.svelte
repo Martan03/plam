@@ -1,5 +1,7 @@
 <script lang="ts">
     import CodeSnippet from "../../components/CodeSnippet.svelte";
+
+    let { isWasmLoaded, stdLibCode } = $props();
 </script>
 
 <article class="wiki-content">
@@ -35,6 +37,25 @@ let || = \a b.a true b
     />
 
     <p>Try implementing xor and implication by yourself!</p>
+
+    <CodeSnippet
+        id="bool-challenge"
+        editable={true}
+        runnable={true && isWasmLoaded}
+        hiddenCode={stdLibCode}
+        code={String.raw`
+let ^ = \a b.TODO  // Fill xor implementation
+let -> = \a b.TODO // Fill implication implementation
+        `}
+        tests={[
+            { code: "^ true true", output: "\\t.\\f.f" },
+            { code: "^ true false", output: "\\t.\\f.t" },
+            { code: "^ false true", output: "\\t.\\f.t" },
+            { code: "^ false false", output: "\\t.\\f.f" },
+            { code: "-> true true", output: "\\t.\\f.t" },
+            { code: "-> true false", output: "\\t.\\f.f" },
+            { code: "-> false true", output: "\\t.\\f.t" },
+            { code: "-> false false", output: "\\t.\\f.t" },
+        ]}
+    />
 </article>
-
-

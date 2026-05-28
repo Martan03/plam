@@ -82,7 +82,7 @@ let Y = \f.(\x.f (x x)) (\x.f (x x));
 
         <div class="content-wiki">
             <Syntax {isWasmLoaded} />
-            <Booleans />
+            <Booleans {isWasmLoaded} {stdLibCode} />
             <Tuples />
             <Numbers {isWasmLoaded} {stdLibCode} />
             <Recursion {isWasmLoaded} {stdLibCode} />
