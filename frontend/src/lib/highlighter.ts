@@ -84,3 +84,12 @@ export const editorTheme = EditorView.theme(
     },
     { dark: true },
 );
+
+export const snippetTheme = EditorView.theme({
+    "&": {
+        backgroundColor: "var(--bg-light) !important",
+    },
+    ".cm-activeLine": {
+        backgroundColor: "transparent !important",
+    },
+});

@@ -1,227 +1,27 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import init, { eval_lambda } from "../../engine/pkg/plam.js";
-    import initialCode from "../../pl-examples/stdlib.pl?raw";
-
-    import Editor from "./lib/components/Editor.svelte";
-    import Terminal from "./lib/components/Terminal.svelte";
-    import { createWorkspace } from "./lib/state/workspace.svelte.js";
-    import Sidebar from "./lib/components/Sidebar.svelte";
-    import ConfirmDialog from "./lib/components/dialogs/ConfirmDialog.svelte";
-    import { persisted } from "./lib/state/storage.svelte.js";
-    import { settings } from "./lib/state/settings.svelte.js";
-    import MenuIcon from "./lib/components/icons/MenuIcon.svelte";
-    import ResetDialog from "./lib/components/dialogs/ResetDialog.svelte";
-    import ShareIcon from "./lib/components/icons/ShareIcon.svelte";
-    import AlertDialog from "./lib/components/dialogs/AlertDialog.svelte";
-
-    let outputValue = $state("System ready. Click 'Run' to evaluate.");
-    let stdinValue = $state("");
-    let isWasmLoaded = $state(false);
-    let runtime = $state<number | null>(null);
-
-    const workspace = createWorkspace(initialCode);
-    const isMenuVisible = persisted("plam-menu-visible", true);
-
-    let terminal: ReturnType<typeof Terminal>;
-    let resetDialog: ReturnType<typeof ConfirmDialog>;
-    let shareDialog: ReturnType<typeof AlertDialog>;
-
-    onMount(async () => {
-        await init();
-        isWasmLoaded = true;
-
-        const params = new URLSearchParams(window.location.search);
-        const sharedCode = params.get("code");
-        if (sharedCode) {
-            workspace.addShared(sharedCode);
-            const pathname = window.location.pathname;
-            window.history.replaceState({}, document.title, pathname);
-        }
-    });
+    import EditorPage from "./lib/pages/EditorPage.svelte";
+    import WikiPage from "./lib/pages/WikiPage.svelte";
+    import { router } from "./lib/state/router.svelte";
+    import { settings } from "./lib/state/settings.svelte";
 
     $effect(() => {
         document.body.style.setProperty("--primary", settings.primaryColor);
         document.documentElement.setAttribute("data-theme", settings.theme);
-    });
 
-    function shareCurrent() {
-        const url = workspace.share();
-        navigator.clipboard.writeText(url);
-        shareDialog.show();
-    }
-
-    function runEval() {
-        if (!isWasmLoaded) return;
-        try {
-            const start = performance.now();
-            outputValue = eval_lambda(workspace.currentCode, stdinValue);
-            const end = performance.now();
-            runtime = end - start;
-        } catch (e) {
-            outputValue = `Error: ${e}`;
+        const metaColor = document.getElementById("theme-color-meta");
+        if (metaColor) {
+            const col = getComputedStyle(document.body)
+                .getPropertyValue("--primary")
+                .trim();
+            metaColor.setAttribute("content", col);
         }
-        terminal?.showOutput();
-    }
-
-    function showReset() {
-        resetDialog.show();
-    }
-
-    function resetCode(content: string) {
-        workspace.currentCode = content;
-    }
+    });
 </script>
 
-<main class="app-container">
-    <header class="toolbar">
-        <div class="header">
-            <button
-                class="toggle-menu"
-                title="{isMenuVisible.value ? 'Hide' : 'Show'} menu"
-                onclick={() => (isMenuVisible.value = !isMenuVisible.value)}
-            >
-                <MenuIcon width="1em" />
-            </button>
-            <h1>plam</h1>
-        </div>
-        <div class="controls">
-            <button class="toggle-menu" onclick={shareCurrent} title="Share">
-                <ShareIcon width="1.2rem" />
-            </button>
-            <button class="btn secondary" onclick={showReset}>
-                Reset Code
-            </button>
-            <button class="btn" onclick={runEval} disabled={!isWasmLoaded}>
-                ▶ Run
-            </button>
-        </div>
-    </header>
-
-    <div class="content">
-        <Sidebar {workspace} bind:isVisible={isMenuVisible.value} />
-
-        <div class="editor">
-            <Editor bind:code={workspace.currentCode} />
-            <Terminal
-                bind:this={terminal}
-                output={outputValue}
-                {runtime}
-                bind:input={stdinValue}
-            />
-        </div>
-    </div>
-</main>
-
-<ResetDialog bind:this={resetDialog} onconfirm={resetCode} />
-<AlertDialog
-    bind:this={shareDialog}
-    onconfirm={() => {}}
-    title="Sharing code"
-    message="Share link copied to clipboard!"
-/>
-
-<style>
-    * {
-        box-sizing: border-box;
-    }
-
-    .app-container {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        width: 100vw;
-        background-color: var(--bg);
-        color: var(--fg);
-        font-family: sans-serif;
-        text-align: left;
-    }
-
-    .content {
-        display: flex;
-        flex: 1;
-        overflow: hidden;
-    }
-
-    .editor {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        min-width: 0;
-    }
-
-    .toolbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem 1.5rem;
-        padding-left: 0.5rem;
-        background-color: var(--bg-panel);
-        border-bottom: 1px solid var(--border);
-    }
-
-    .toolbar h1 {
-        margin: 0;
-        font-size: 1.2rem;
-        font-weight: 600;
-    }
-
-    .toolbar .controls,
-    .toolbar .header {
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-    }
-
-    .toolbar .controls .btn {
-        padding: 0.5rem 1.5rem;
-        background: var(--primary);
-        color: var(--bg);
-        border: 1px solid transparent;
-        border-radius: 4px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background 0.1s;
-    }
-
-    .toolbar .controls button.secondary {
-        background: transparent;
-        color: var(--fg);
-        border: 1px solid var(--border-light);
-    }
-
-    .toolbar .controls .btn:hover {
-        background: color-mix(in srgb, var(--primary), var(--hover-dim) 20%);
-    }
-
-    .toolbar .controls button.secondary:hover {
-        background: var(--bg-light);
-        color: var(--fg-max);
-    }
-
-    .toolbar .controls .btn:disabled {
-        background: var(--border-light);
-        color: var(--bg);
-        cursor: not-allowed;
-    }
-
-    .toggle-menu {
-        background: transparent;
-        color: var(--fg);
-        border: none;
-        cursor: pointer;
-        font-size: 1.5rem;
-        border-radius: 4px;
-        width: 2.1rem;
-        height: 2.1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        outline: none;
-    }
-
-    .toggle-menu:hover {
-        color: var(--fg-max);
-        background: var(--bg-light);
-    }
-</style>
+{#if router.path === "/wiki"}
+    <WikiPage />
+{:else if router.path === "/"}
+    <EditorPage />
+{:else}
+    <h1>404 - Page Not Found</h1>
+{/if}
