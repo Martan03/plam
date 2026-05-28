@@ -9,7 +9,6 @@
     import Sidebar from "../components/Sidebar.svelte";
     import ConfirmDialog from "../components/dialogs/ConfirmDialog.svelte";
     import { persisted } from "../state/storage.svelte.js";
-    import MenuIcon from "../components/icons/MenuIcon.svelte";
     import ResetDialog from "../components/dialogs/ResetDialog.svelte";
     import ShareIcon from "../components/icons/ShareIcon.svelte";
     import AlertDialog from "../components/dialogs/AlertDialog.svelte";

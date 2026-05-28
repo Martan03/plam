@@ -14,6 +14,7 @@
     import Recursion from "./wiki/Recursion.svelte";
     import Tuples from "./wiki/Tuples.svelte";
     import Conclusion from "./wiki/Conclusion.svelte";
+    import Toc from "../components/Toc.svelte";
 
     let isWasmLoaded = $state(false);
     const isMenuVisible = persisted("plam-menu-visible", true);
@@ -67,6 +68,8 @@ let Y = \f.(\x.f (x x)) (\x.f (x x));
 
     <div class="content">
         <Sidebar bind:isVisible={isMenuVisible.value}>
+            <Toc selector=".content-wiki" />
+
             {#snippet actions()}
                 <button
                     class="sidebar-action-btn"
