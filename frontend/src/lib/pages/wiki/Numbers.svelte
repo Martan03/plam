@@ -169,6 +169,8 @@ let ** = \a x.TODO  // Fill power implementation
             { code: "cnum (** 5 0)", output: ":1:" },
             { code: "cnum (** 0 2)", output: ":0:" },
             { code: "cnum (** 2 5)", output: ":32:" },
+            { code: "cnum (** 1 5)", output: ":1:" },
+            { code: "cnum (** 0 0)", output: ":1:" },
         ]}
     />
 
@@ -230,11 +232,11 @@ gte 0 2;
 let gt = \a b.TODO  // Fill strict greater implementation
         `}
         tests={[
-            { code: "gt 0 0", output: "\\t.\\f.f" },
-            { code: "gt 5 5", output: "\\t.\\f.f" },
-            { code: "gt 5 2", output: "\\t.\\f.t" },
-            { code: "gt 1 0", output: "\\t.\\f.t" },
-            { code: "gt 0 1", output: "\\t.\\f.f" },
+            { code: "cbool (gt 0 0)", output: "False" },
+            { code: "cbool (gt 5 5)", output: "False" },
+            { code: "cbool (gt 5 2)", output: "True" },
+            { code: "cbool (gt 1 0)", output: "True" },
+            { code: "cbool (gt 0 1)", output: "False" },
         ]}
     />
 
