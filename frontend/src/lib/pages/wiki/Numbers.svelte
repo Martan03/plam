@@ -156,6 +156,22 @@ cnum (* 3 2);
                 `}
     />
 
+    <p>Try implementing power by yourself!</p>
+    <CodeSnippet
+        id="number-power-challenge"
+        editable={true}
+        runnable={true && isWasmLoaded}
+        hiddenCode={stdLibCode}
+        code={String.raw`
+let ** = \a x.TODO  // Fill power implementation
+        `}
+        tests={[
+            { code: "cnum (** 5 0)", output: ":1:" },
+            { code: "cnum (** 0 2)", output: ":0:" },
+            { code: "cnum (** 2 5)", output: ":32:" },
+        ]}
+    />
+
     <h3>Predicates</h3>
 
     <p>
@@ -205,6 +221,22 @@ gte 0 2;
     />
 
     <p>Try to implement a strict greater by yourself!</p>
+    <CodeSnippet
+        id="number-gt-challenge"
+        editable={true}
+        runnable={true && isWasmLoaded}
+        hiddenCode={stdLibCode}
+        code={String.raw`
+let gt = \a b.TODO  // Fill strict greater implementation
+        `}
+        tests={[
+            { code: "gt 0 0", output: "\\t.\\f.f" },
+            { code: "gt 5 5", output: "\\t.\\f.f" },
+            { code: "gt 5 2", output: "\\t.\\f.t" },
+            { code: "gt 1 0", output: "\\t.\\f.t" },
+            { code: "gt 0 1", output: "\\t.\\f.f" },
+        ]}
+    />
 
     <p>
         You might be wondering, why didn't we do division as well? The reason is
